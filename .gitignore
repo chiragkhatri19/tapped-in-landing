@@ -39,4 +39,9 @@ waitlist.db
 .workspace/
 .antigravitycli/
 
+# Credentials
+fintent-app-*.json
+*.json.key
+
+
 
