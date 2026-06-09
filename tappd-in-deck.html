@@ -1,0 +1,1983 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tappd in . the deck</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Hanken+Grotesk:wght@400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #141210; /* warm near-black, never pure */
+        --cream: #f2ecde; /* bone cream */
+        --card: #fbf7ec;
+        --cobalt: #2b3aff;
+        --pop: #e8ff00; /* acid yellow, the rare pop */
+        --alert: #ff3b2f;
+        --muted: #5a5246;
+        --teal: #00a892;
+        --orange: #f2740c;
+        --violet: #6c4df0;
+        --iris: #6b5b95;
+
+        --acc: var(--cobalt); /* per-slide accent, overridden inline */
+
+        --bd: 3px solid var(--ink);
+        --bd-cream: 3px solid var(--cream);
+        --sh: 7px 7px 0 var(--ink);
+        --sh-sm: 4px 4px 0 var(--ink);
+        --sh-lg: 11px 11px 0 var(--ink);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        background: var(--ink);
+      }
+      body {
+        font-family: "Hanken Grotesk", sans-serif;
+        color: var(--ink);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .mono {
+        font-family: "Geist Mono", monospace;
+        font-feature-settings: "tnum";
+      }
+
+      /* ====== DECK ====== */
+      #deck {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+      }
+      .slide {
+        position: absolute;
+        inset: 0;
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        padding: 7vh 6.5vw 9vh;
+        overflow: hidden;
+      }
+      .slide.active {
+        display: flex;
+        animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(24px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      .bg-cream {
+        background: var(--cream);
+        color: var(--ink);
+      }
+      .bg-cobalt {
+        background: var(--cobalt);
+        color: var(--cream);
+      }
+
+      /* visible projector-friendly grid texture */
+      .slide::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        background-image: radial-gradient(currentColor 1.7px, transparent 1.9px);
+        background-size: 26px 26px;
+        opacity: 0.09;
+      }
+      .bg-cobalt::after {
+        opacity: 0.16;
+      }
+      .slide > * {
+        position: relative;
+        z-index: 1;
+      }
+
+      /* ====== TYPE ====== */
+      .micro {
+        font-family: "Geist Mono", monospace;
+        font-weight: 600;
+        font-size: clamp(11px, 1.05vw, 15px);
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        margin-bottom: 26px;
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--muted);
+      }
+      .micro::before {
+        content: "";
+        width: 26px;
+        height: 12px;
+        background: var(--acc);
+        border: 2.5px solid var(--ink);
+        display: inline-block;
+      }
+      .bg-cobalt .micro {
+        color: var(--cream);
+      }
+      .bg-cobalt .micro::before {
+        background: var(--pop);
+        border-color: var(--cream);
+      }
+      .micro.plain::before {
+        display: none;
+      }
+
+      h1.hero {
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-style: italic;
+        font-weight: 800;
+        text-transform: lowercase;
+        letter-spacing: -0.045em;
+        line-height: 0.88;
+        font-size: clamp(50px, 10vw, 168px);
+      }
+      h2.head {
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-style: italic;
+        font-weight: 700;
+        text-transform: lowercase;
+        letter-spacing: -0.03em;
+        line-height: 0.98;
+        font-size: clamp(30px, 5vw, 72px);
+        margin-bottom: 26px;
+        max-width: 22ch;
+      }
+      .lead {
+        font-size: clamp(17px, 2vw, 27px);
+        font-weight: 500;
+        line-height: 1.38;
+        max-width: 56ch;
+      }
+      .body {
+        font-size: clamp(15px, 1.55vw, 21px);
+        font-weight: 400;
+        line-height: 1.5;
+        max-width: 52ch;
+      }
+      .sub {
+        font-size: clamp(13px, 1.35vw, 18px);
+        font-weight: 400;
+        line-height: 1.45;
+        color: var(--muted);
+      }
+      .bg-cobalt .sub {
+        color: var(--cream);
+        opacity: 0.7;
+      }
+      b,
+      strong {
+        font-weight: 700;
+      }
+      .mk {
+        background: var(--pop);
+        color: var(--ink);
+        padding: 0 7px;
+        box-decoration-break: clone;
+        -webkit-box-decoration-break: clone;
+      }
+      .acc-txt {
+        color: var(--acc);
+      }
+
+      .ic {
+        width: 1em;
+        height: 1em;
+        display: inline-block;
+        vertical-align: -0.12em;
+      }
+      .ic svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      /* ====== CHROME ====== */
+      #progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 6px;
+        background: var(--cobalt);
+        border-bottom: 2.5px solid var(--ink);
+        z-index: 60;
+        transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+        width: 0;
+      }
+      #counter {
+        position: fixed;
+        bottom: 20px;
+        right: 26px;
+        z-index: 60;
+        font-family: "Geist Mono", monospace;
+        font-weight: 600;
+        font-size: 13px;
+        background: var(--ink);
+        color: var(--cream);
+        padding: 6px 12px;
+      }
+      #brandmark {
+        position: fixed;
+        bottom: 16px;
+        left: 26px;
+        z-index: 60;
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-style: italic;
+        font-weight: 700;
+        text-transform: lowercase;
+        font-size: 16px;
+        color: var(--ink);
+        opacity: 0.55;
+        letter-spacing: -0.02em;
+      }
+      #hint {
+        position: fixed;
+        top: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 60;
+        font-family: "Geist Mono", monospace;
+        font-weight: 500;
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        color: var(--cream);
+        background: rgba(20, 18, 16, 0.72);
+        padding: 6px 13px;
+        transition: opacity 0.7s;
+      }
+
+      /* ====== 01 COVER ====== */
+      .cover-mark {
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-style: italic;
+        font-weight: 800;
+        text-transform: lowercase;
+        letter-spacing: -0.05em;
+        font-size: clamp(72px, 16vw, 250px);
+        line-height: 0.8;
+      }
+      .cover-tag {
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-style: italic;
+        font-weight: 500;
+        text-transform: lowercase;
+        font-size: clamp(20px, 3vw, 46px);
+        letter-spacing: -0.02em;
+        margin-top: 20px;
+      }
+      .cursor {
+        display: inline-block;
+        width: 0.48em;
+        height: 0.82em;
+        background: var(--pop);
+        margin-left: 10px;
+        transform: translateY(2px);
+        animation: blink 1.05s steps(1) infinite;
+      }
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+      .chip-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 40px;
+      }
+      .chip {
+        font-family: "Geist Mono", monospace;
+        font-weight: 600;
+        font-size: clamp(11px, 1.2vw, 15px);
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        padding: 10px 16px;
+        border: var(--bd-cream);
+      }
+
+      /* ====== 02 DICTIONARY ====== */
+      .dict {
+        background: var(--card);
+        border: var(--bd);
+        box-shadow: var(--sh-lg);
+        padding: clamp(28px, 3.6vw, 52px);
+        max-width: 960px;
+      }
+      .dict-word {
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-style: italic;
+        font-weight: 700;
+        text-transform: lowercase;
+        letter-spacing: -0.04em;
+        font-size: clamp(46px, 7.5vw, 112px);
+        line-height: 0.95;
+      }
+      .dict-phon {
+        font-family: "Geist Mono", monospace;
+        font-size: clamp(15px, 1.8vw, 24px);
+        color: var(--muted);
+        margin: 6px 0;
+      }
+      .dict-pos {
+        font-style: italic;
+        font-weight: 600;
+        color: var(--muted);
+        margin-bottom: 18px;
+        font-size: clamp(14px, 1.5vw, 20px);
+      }
+      .dict-def {
+        background: var(--pop);
+        border: var(--bd);
+        padding: 16px 20px;
+        font-size: clamp(17px, 2.1vw, 28px);
+        font-weight: 600;
+        line-height: 1.3;
+      }
+      .levels {
+        display: flex;
+        gap: 22px;
+        margin-top: 24px;
+        flex-wrap: wrap;
+      }
+      .level {
+        flex: 1;
+        min-width: 200px;
+      }
+      .level .num {
+        font-family: "Geist Mono", monospace;
+        font-weight: 600;
+        font-size: clamp(13px, 1.4vw, 17px);
+        color: var(--cobalt);
+      }
+      .level p {
+        font-size: clamp(13px, 1.4vw, 18px);
+        font-weight: 500;
+        line-height: 1.35;
+        margin-top: 5px;
+      }
+
+      /* ====== 03 COMPETITORS ====== */
+      .strengths {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px 40px;
+        max-width: 1180px;
+      }
+      .str {
+        display: grid;
+        grid-template-columns: clamp(120px, 12vw, 170px) 1fr;
+        gap: 16px;
+        align-items: baseline;
+        border-bottom: 2.5px solid var(--ink);
+        padding-bottom: 12px;
+      }
+      .str .app {
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-style: italic;
+        font-weight: 700;
+        text-transform: lowercase;
+        font-size: clamp(17px, 1.9vw, 26px);
+        letter-spacing: -0.02em;
+      }
+      .str .good {
+        font-size: clamp(13px, 1.4vw, 18px);
+        font-weight: 500;
+        line-height: 1.3;
+        color: var(--muted);
+      }
+      .gap-line {
+        margin-top: 28px;
+        font-size: clamp(17px, 2vw, 27px);
+        font-weight: 600;
+        max-width: 58ch;
+      }
+
+      /* ====== 04 WHY ALL-IN-ONE ====== */
+      .contrast {
+        display: grid;
+        grid-template-columns: 1fr auto 1.1fr;
+        gap: clamp(18px, 2.6vw, 44px);
+        align-items: center;
+        margin: 6px 0 24px;
+      }
+      .c-title {
+        font-family: "Geist Mono", monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-size: clamp(10px, 1.1vw, 14px);
+        font-weight: 600;
+        color: var(--muted);
+        margin-bottom: 14px;
+      }
+      .c-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .c-box {
+        border: 2.5px dashed var(--muted);
+        background: transparent;
+        padding: 16px 12px;
+        font-weight: 600;
+        text-align: center;
+        font-size: clamp(13px, 1.4vw, 18px);
+        color: var(--muted);
+        border-radius: 4px;
+      }
+      .c-vs {
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-style: italic;
+        font-weight: 700;
+        font-size: clamp(20px, 2.4vw, 34px);
+        color: var(--muted);
+      }
+      .c-right {
+        display: flex;
+        align-items: center;
+        gap: clamp(10px, 1.4vw, 18px);
+      }
+      .c-feeds {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .c-feed {
+        border: var(--bd);
+        background: var(--card);
+        box-shadow: var(--sh-sm);
+        padding: 9px 13px;
+        font-family: "Geist Mono", monospace;
+        font-weight: 500;
+        font-size: clamp(11px, 1.2vw, 15px);
+      }
+      .c-arrow {
+        color: var(--cobalt);
+        font-size: clamp(24px, 2.6vw, 36px);
+      }
+      .c-hub {
+        background: var(--cobalt);
+        color: var(--cream);
+        border: var(--bd);
+        box-shadow: var(--sh);
+        padding: clamp(16px, 2vw, 26px) clamp(14px, 1.8vw, 22px);
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-style: italic;
+        font-weight: 700;
+        text-transform: lowercase;
+        font-size: clamp(17px, 2.2vw, 30px);
+        line-height: 1;
+      }
+
+      /* ====== 05 REVEAL ====== */
+      .reveal {
+        display: flex;
+        gap: clamp(24px, 4vw, 70px);
+        align-items: flex-end;
+        margin: 10px 0 28px;
+        flex-wrap: wrap;
+      }
+      .rl {
+        font-family: "Geist Mono", monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: clamp(10px, 1.05vw, 13px);
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      .old-wrap {
+        position: relative;
+        display: inline-block;
+      }
+      .old-num {
+        font-family: "Geist Mono", monospace;
+        font-weight: 500;
+        font-size: clamp(42px, 6.4vw, 100px);
+        color: var(--muted);
+        line-height: 1;
+      }
+      .strike-line {
+        position: absolute;
+        left: -4%;
+        top: 52%;
+        height: 7px;
+        width: 108%;
+        background: var(--alert);
+        transform: scaleX(0);
+        transform-origin: left;
+      }
+      .active .strike-line {
+        animation: strike 0.42s 0.55s cubic-bezier(0.5, 0, 0.2, 1) both;
+      }
+      @keyframes strike {
+        to {
+          transform: scaleX(1);
+        }
+      }
+      .real-box {
+        background: var(--pop);
+        border: var(--bd);
+        box-shadow: var(--sh);
+        padding: 14px 26px;
+        transform: rotate(-1.5deg);
+      }
+      .active .real-box {
+        animation: stamp 0.5s 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+      @keyframes stamp {
+        from {
+          transform: scale(0.7) rotate(-4deg);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1) rotate(-1.5deg);
+          opacity: 1;
+        }
+      }
+      .real-num {
+        font-family: "Geist Mono", monospace;
+        font-weight: 600;
+        font-size: clamp(42px, 6.4vw, 100px);
+        line-height: 1;
+      }
+      .real-unit {
+        font-family: "Geist Mono", monospace;
+        font-size: clamp(15px, 1.6vw, 22px);
+      }
+      .inputs-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .inp {
+        font-family: "Geist Mono", monospace;
+        font-size: clamp(11px, 1.2vw, 15px);
+        font-weight: 500;
+        border: var(--bd);
+        padding: 8px 14px;
+        background: var(--card);
+        box-shadow: var(--sh-sm);
+      }
+
+      /* ====== SPLIT (06) ====== */
+      .split {
+        display: grid;
+        grid-template-columns: 1.08fr 0.92fr;
+        gap: clamp(30px, 4vw, 64px);
+        align-items: center;
+      }
+      .subs-label {
+        font-family: "Geist Mono", monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-size: clamp(10px, 1vw, 13px);
+        color: var(--muted);
+        margin: 22px 0 12px;
+        font-weight: 600;
+      }
+      .subs {
+        display: flex;
+        gap: 9px;
+        flex-wrap: wrap;
+      }
+      .subs .s {
+        border: 2.5px solid var(--ink);
+        background: var(--card);
+        box-shadow: var(--sh-sm);
+        padding: 9px 13px;
+        font-family: "Geist Mono", monospace;
+        font-weight: 500;
+        font-size: clamp(11px, 1.2vw, 15px);
+      }
+      .subs .s.key {
+        background: var(--acc);
+        color: #fff;
+      }
+
+      /* ====== 07 COACH ====== */
+      .coach-stage {
+        max-width: 920px;
+        margin: 4px auto 0;
+        width: 100%;
+      }
+      .cbub-user {
+        display: inline-block;
+        border: 2.5px solid var(--ink);
+        background: var(--card);
+        border-radius: 12px 12px 12px 2px;
+        padding: 12px 18px;
+        font-size: clamp(15px, 1.7vw, 22px);
+        font-weight: 500;
+        margin-left: 6%;
+      }
+      .cbub-coach {
+        border: var(--bd);
+        background: var(--card);
+        box-shadow: var(--sh-lg);
+        border-radius: 12px 12px 2px 12px;
+        padding: clamp(22px, 2.8vw, 38px);
+        margin-top: 16px;
+        margin-right: 4%;
+      }
+      .cbub-coach .q {
+        font-size: clamp(19px, 2.5vw, 34px);
+        font-weight: 600;
+        line-height: 1.3;
+      }
+      .why-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 20px;
+        background: var(--pop);
+        border: var(--bd);
+        box-shadow: var(--sh-sm);
+        padding: 9px 15px;
+        font-family: "Geist Mono", monospace;
+        font-weight: 600;
+        font-size: clamp(12px, 1.3vw, 16px);
+      }
+      .why-chip .c {
+        color: var(--muted);
+        font-weight: 500;
+      }
+
+      /* ====== 08 WORKOUT TWO-PANEL ====== */
+      .twopanel {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: clamp(18px, 2.4vw, 32px);
+        margin-bottom: 20px;
+      }
+      .panel {
+        border: var(--bd);
+        box-shadow: var(--sh);
+        background: var(--card);
+        padding: clamp(20px, 2.4vw, 30px);
+        border-top: 12px solid var(--acc);
+      }
+      .panel-h {
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-style: italic;
+        font-weight: 700;
+        text-transform: lowercase;
+        font-size: clamp(21px, 2.5vw, 34px);
+        line-height: 1;
+      }
+      .panel-sub {
+        font-size: clamp(13px, 1.4vw, 18px);
+        color: var(--muted);
+        font-weight: 500;
+        margin: 8px 0 16px;
+        line-height: 1.35;
+      }
+      .day-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .day-chip {
+        border: 2.5px solid var(--ink);
+        border-radius: 5px;
+        background: var(--cream);
+        padding: 8px 12px;
+        font-family: "Geist Mono", monospace;
+        font-size: clamp(11px, 1.2vw, 15px);
+        font-weight: 500;
+      }
+      .day-chip b {
+        color: var(--acc);
+      }
+      .setline {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: "Geist Mono", monospace;
+        font-size: clamp(12px, 1.3vw, 16px);
+        font-weight: 500;
+        padding: 9px 0;
+        border-bottom: 2px solid rgba(20, 18, 16, 0.12);
+      }
+      .setline:last-child {
+        border-bottom: none;
+      }
+      .setline .chk {
+        width: 15px;
+        height: 15px;
+        border: 2.5px solid var(--ink);
+        background: var(--acc);
+        border-radius: 3px;
+      }
+      .panel-note {
+        border: 2.5px dashed var(--muted);
+        border-radius: 4px;
+        padding: 14px 18px;
+        font-size: clamp(13px, 1.45vw, 19px);
+        font-weight: 500;
+      }
+      .panel-note b {
+        font-weight: 700;
+      }
+
+      /* ====== 09 RECOVERY ====== */
+      .rec {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: clamp(30px, 4.5vw, 70px);
+        align-items: center;
+      }
+      .score-box {
+        border: var(--bd);
+        box-shadow: var(--sh-lg);
+        background: var(--card);
+        padding: clamp(22px, 2.8vw, 38px) clamp(30px, 4vw, 52px);
+        text-align: center;
+      }
+      .score-box .num {
+        font-family: "Geist Mono", monospace;
+        font-weight: 600;
+        font-size: clamp(64px, 10vw, 150px);
+        line-height: 0.86;
+        color: var(--iris);
+      }
+      .score-box .lbl {
+        font-family: "Geist Mono", monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: clamp(11px, 1.2vw, 15px);
+        color: var(--muted);
+        margin-top: 8px;
+      }
+      .breakdown {
+        display: flex;
+        flex-direction: column;
+        gap: 13px;
+        max-width: 600px;
+      }
+      .bd-row .bdl {
+        display: flex;
+        justify-content: space-between;
+        font-family: "Geist Mono", monospace;
+        font-size: clamp(12px, 1.3vw, 16px);
+        font-weight: 500;
+        margin-bottom: 5px;
+      }
+      .bd-bar {
+        height: 14px;
+        border: 2.5px solid var(--ink);
+        background: var(--cream);
+        overflow: hidden;
+      }
+      .bd-bar i {
+        display: block;
+        height: 100%;
+        background: var(--iris);
+      }
+
+      /* ====== PHONES ====== */
+      .phones {
+        display: flex;
+        gap: clamp(20px, 3.5vw, 56px);
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .phone-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 11px;
+      }
+      .phone {
+        width: clamp(200px, 19vw, 270px);
+        border: var(--bd);
+        background: var(--cream);
+        border-radius: 30px;
+        box-shadow: var(--sh-lg);
+        padding: 12px 11px 16px;
+      }
+      .p-status {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: "Geist Mono", monospace;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 8px 12px;
+      }
+      .p-status .dots {
+        display: flex;
+        gap: 3px;
+      }
+      .p-status .dots span {
+        width: 5px;
+        height: 5px;
+        background: var(--ink);
+        border-radius: 50%;
+      }
+      .p-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 0 4px 12px;
+      }
+      .p-mark {
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-style: italic;
+        font-weight: 800;
+        text-transform: lowercase;
+        letter-spacing: -0.04em;
+        font-size: 17px;
+      }
+      .p-date {
+        font-family: "Geist Mono", monospace;
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .p-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .p-card {
+        border: 2.5px solid var(--ink);
+        border-radius: 6px;
+        background: var(--card);
+        padding: 11px 12px;
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+      .p-tag {
+        font-family: "Geist Mono", monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        font-size: 9px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+      .p-big {
+        font-family: "Geist Mono", monospace;
+        font-weight: 600;
+        font-size: 32px;
+        line-height: 1;
+        margin-top: 4px;
+      }
+      .p-big .u {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .p-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+      }
+      .p-ready {
+        width: 54px;
+        height: 54px;
+        flex-shrink: 0;
+        border: 2.5px solid var(--ink);
+        border-radius: 6px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 3px 3px 0 var(--ink);
+        background: var(--card);
+      }
+      .p-ready .rn {
+        font-family: "Geist Mono", monospace;
+        font-weight: 600;
+        font-size: 22px;
+        line-height: 1;
+        color: var(--iris);
+      }
+      .p-ready .rl {
+        font-family: "Geist Mono", monospace;
+        font-size: 7px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .p-macro .ml {
+        display: flex;
+        justify-content: space-between;
+        font-family: "Geist Mono", monospace;
+        font-size: 10px;
+        font-weight: 500;
+        margin-bottom: 3px;
+      }
+      .p-bar {
+        height: 8px;
+        border: 2px solid var(--ink);
+        background: var(--cream);
+        overflow: hidden;
+      }
+      .p-bar i {
+        display: block;
+        height: 100%;
+        background: var(--cobalt);
+      }
+      .p-btn {
+        background: var(--cobalt);
+        color: var(--cream);
+        border: 2.5px solid var(--ink);
+        border-radius: 6px;
+        box-shadow: 3px 3px 0 var(--ink);
+        text-align: center;
+        padding: 11px;
+        font-family: "Hanken Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 13px;
+        text-transform: lowercase;
+      }
+      .p-chathead {
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-style: italic;
+        font-weight: 700;
+        text-transform: lowercase;
+        font-size: 18px;
+        padding: 0 4px 4px;
+      }
+      .bub {
+        border: 2.5px solid var(--ink);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 1.35;
+      }
+      .bub-user {
+        background: var(--cream);
+        margin-left: 34px;
+      }
+      .bub-coach {
+        background: var(--card);
+        box-shadow: 3px 3px 0 var(--ink);
+        margin-right: 12px;
+      }
+      .p-why {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 9px;
+        background: var(--pop);
+        border: 2.5px solid var(--ink);
+        box-shadow: 3px 3px 0 var(--ink);
+        padding: 6px 10px;
+        font-family: "Geist Mono", monospace;
+        font-weight: 600;
+        font-size: 10px;
+      }
+      .p-why .c {
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .p-input {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 6px;
+        border: 2.5px solid var(--ink);
+        border-radius: 999px;
+        padding: 9px 8px 9px 14px;
+        font-family: "Hanken Grotesk", sans-serif;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .p-input .send {
+        width: 22px;
+        height: 22px;
+        background: var(--cobalt);
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .phone-cap {
+        font-family: "Geist Mono", monospace;
+        font-size: clamp(10px, 1.05vw, 13px);
+        color: var(--muted);
+        letter-spacing: 0.04em;
+      }
+      .p-listrow {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: "Geist Mono", monospace;
+        font-size: 10px;
+        font-weight: 500;
+        padding: 6px 0;
+        border-bottom: 1.5px solid rgba(20, 18, 16, 0.14);
+      }
+      .p-listrow:last-child {
+        border-bottom: none;
+      }
+      .p-listrow .chk {
+        width: 13px;
+        height: 13px;
+        border: 2px solid var(--ink);
+        background: var(--cobalt);
+        border-radius: 3px;
+        flex-shrink: 0;
+      }
+      .p-daycard {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 2px solid var(--ink);
+        border-radius: 5px;
+        background: var(--card);
+        padding: 7px 9px;
+        font-family: "Geist Mono", monospace;
+        font-size: 10px;
+        font-weight: 500;
+      }
+      .p-daycard .d {
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-size: 8.5px;
+      }
+      .p-alt {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+      }
+      .p-altchip {
+        font-family: "Geist Mono", monospace;
+        font-size: 8.5px;
+        font-weight: 500;
+        border: 2px solid var(--ink);
+        border-radius: 4px;
+        padding: 4px 7px;
+        background: var(--cream);
+      }
+      .p-altchip.on {
+        background: var(--pop);
+      }
+      .p-mini-tag {
+        font-family: "Geist Mono", monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 8px;
+        font-weight: 600;
+        color: var(--orange);
+      }
+      .wave {
+        display: flex;
+        align-items: center;
+        color: var(--cobalt);
+        height: 22px;
+      }
+      .wave svg {
+        height: 100%;
+        width: auto;
+      }
+
+      /* five-phone filmstrip */
+      .phones.five {
+        gap: clamp(10px, 1.5vw, 24px);
+        justify-content: center;
+      }
+      .phones.five .phone {
+        width: clamp(148px, 14vw, 196px);
+        border-radius: 26px;
+        padding: 10px 9px 13px;
+      }
+      .phones.five .phone-wrap {
+        gap: 9px;
+      }
+      .phones.five .p-big {
+        font-size: 25px;
+      }
+      .phones.five .p-status {
+        padding: 1px 6px 9px;
+        font-size: 9px;
+      }
+      .phones.five .p-stack {
+        gap: 8px;
+      }
+      .phones.five .p-card {
+        padding: 9px 10px;
+      }
+      .phones.five .bub {
+        font-size: 10.5px;
+        padding: 8px 10px;
+      }
+      .phones.five .p-chathead {
+        font-size: 15px;
+      }
+
+      /* ====== 11 RECEIPTS ====== */
+      .receipts {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px 44px;
+        max-width: 1140px;
+      }
+      .receipt {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 16px;
+        align-items: start;
+      }
+      .receipt .rn {
+        font-family: "Geist Mono", monospace;
+        font-weight: 600;
+        font-size: clamp(20px, 2.4vw, 32px);
+        color: var(--acc);
+      }
+      .receipt .rt b {
+        font-size: clamp(16px, 1.8vw, 23px);
+      }
+      .receipt .rt span {
+        display: block;
+        color: var(--muted);
+        font-size: clamp(13px, 1.4vw, 18px);
+        margin-top: 4px;
+        line-height: 1.35;
+      }
+
+      /* ====== 12 GRID ====== */
+      .grid6 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: clamp(13px, 1.6vw, 20px);
+      }
+      .feat {
+        border: var(--bd);
+        box-shadow: var(--sh-sm);
+        background: var(--card);
+        padding: clamp(16px, 1.9vw, 24px);
+      }
+      .feat h4 {
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-style: italic;
+        font-weight: 700;
+        text-transform: lowercase;
+        font-size: clamp(17px, 1.8vw, 25px);
+        line-height: 1;
+      }
+      .feat p {
+        font-size: clamp(12px, 1.3vw, 16px);
+        font-weight: 400;
+        color: var(--muted);
+        line-height: 1.32;
+        margin-top: 7px;
+      }
+      .feat .fn {
+        font-family: "Geist Mono", monospace;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--acc);
+      }
+      .mini-chips {
+        display: flex;
+        gap: 9px;
+        flex-wrap: wrap;
+        margin-top: 22px;
+      }
+      .mini {
+        font-family: "Geist Mono", monospace;
+        font-size: clamp(10px, 1.1vw, 14px);
+        font-weight: 500;
+        border: 2.5px solid var(--ink);
+        padding: 6px 12px;
+        background: var(--cream);
+      }
+
+      /* ====== 13 CLOSE ====== */
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 14px;
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-style: italic;
+        font-weight: 700;
+        text-transform: lowercase;
+        font-size: clamp(22px, 3.4vw, 50px);
+        background: var(--pop);
+        color: var(--ink);
+        padding: 18px 34px;
+        border: var(--bd-cream);
+        box-shadow: 10px 10px 0 var(--cream);
+        transform: rotate(-1.5deg);
+        margin-top: 28px;
+      }
+
+      @media (max-width: 860px) {
+        .split,
+        .twopanel,
+        .grid6,
+        .strengths,
+        .receipts,
+        .rec {
+          grid-template-columns: 1fr;
+        }
+        .contrast {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="progress"></div>
+    <div id="hint">arrow keys to move . press 1 to restart . F for fullscreen</div>
+    <div id="brandmark">. tappd in</div>
+    <div id="counter">01 / 13</div>
+
+    <div id="deck">
+      <!-- 01 . COVER -->
+      <section class="slide bg-cobalt active">
+        <span class="micro plain">evidence-based fitness os . 2026</span>
+        <div class="cover-mark">tappd in<span class="cursor"></span></div>
+        <div class="cover-tag">a fitness app that actually thinks.</div>
+        <div class="chip-row">
+          <span class="chip">neat-aware maintenance</span>
+          <span class="chip">a coach that cites its sources</span>
+          <span class="chip">one brain, all your data</span>
+        </div>
+      </section>
+
+      <!-- 02 . WHAT IT MEANS -->
+      <section class="slide bg-cream" style="--acc: var(--cobalt)">
+        <span class="micro">what it means</span>
+        <div class="dict">
+          <div class="dict-word">tapped in</div>
+          <div class="dict-phon mono">/tæpt ɪn/</div>
+          <div class="dict-pos">adjective . slang</div>
+          <div class="dict-def">
+            locked in. dialed in. paying attention to the thing that actually moves the needle.
+          </div>
+          <div class="levels">
+            <div class="level">
+              <div class="num">01</div>
+              <p>you tap to log your day.</p>
+            </div>
+            <div class="level">
+              <div class="num">02</div>
+              <p>you tap into your own data.</p>
+            </div>
+            <div class="level">
+              <div class="num">03</div>
+              <p>you're tapped into the people doing the same.</p>
+            </div>
+          </div>
+        </div>
+        <p class="sub" style="margin-top: 20px">
+          the dropped 'e' is on purpose. you can't type our name into existence by accident.
+        </p>
+      </section>
+
+      <!-- 03 . COMPETITORS (humble) -->
+      <section class="slide bg-cream" style="--acc: var(--teal)">
+        <span class="micro">the apps people already love</span>
+        <h2 class="head" style="margin-bottom: 30px">everyone out there is good at one thing.</h2>
+        <div class="strengths">
+          <div class="str">
+            <span class="app">myfitnesspal</span
+            ><span class="good"
+              >the biggest food database, and a brand everyone already trusts.</span
+            >
+          </div>
+          <div class="str">
+            <span class="app">macrofactor</span
+            ><span class="good">the gold standard for evidence-based, adaptive nutrition.</span>
+          </div>
+          <div class="str">
+            <span class="app">hevy</span
+            ><span class="good">the cleanest, most-loved workout logger going.</span>
+          </div>
+          <div class="str">
+            <span class="app">whoop</span
+            ><span class="good">best in class for recovery, sleep and strain.</span>
+          </div>
+          <div class="str">
+            <span class="app">cal ai</span
+            ><span class="good">the fastest way to log a meal from a photo.</span>
+          </div>
+          <div class="str">
+            <span class="app">healthifyme</span
+            ><span class="good">india's all-in-one, coaching plus tracking at real scale.</span>
+          </div>
+        </div>
+        <p class="gap-line">
+          we respect all of them. but each one lives in its own app, and none of them share what
+          they learn about you.
+        </p>
+      </section>
+
+      <!-- 04 . WHY ALL-IN-ONE -->
+      <section class="slide bg-cream" style="--acc: var(--cobalt)">
+        <span class="micro">our actual difference</span>
+        <h2 class="head" style="max-width: 24ch">
+          putting it all in one app isn't the trick. connecting it is.
+        </h2>
+        <div class="contrast">
+          <div class="c-side">
+            <div class="c-title">the usual all-in-one</div>
+            <div class="c-grid">
+              <div class="c-box">tracker</div>
+              <div class="c-box">workout</div>
+              <div class="c-box">coach</div>
+              <div class="c-box">sleep</div>
+            </div>
+            <p class="sub" style="margin-top: 12px">
+              four tabs in one download. they never talk to each other.
+            </p>
+          </div>
+          <div class="c-vs">vs</div>
+          <div class="c-side">
+            <div class="c-title">tappd in</div>
+            <div class="c-right">
+              <div class="c-feeds">
+                <span class="c-feed">meals</span>
+                <span class="c-feed">training</span>
+                <span class="c-feed">sleep</span>
+                <span class="c-feed">weight</span>
+              </div>
+              <span class="c-arrow ic"
+                ><svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M5 12h14" />
+                  <path d="m12 5 7 7-7 7" /></svg
+              ></span>
+              <span class="c-hub">one coach<br />that remembers<br />all of it</span>
+            </div>
+            <p class="sub" style="margin-top: 12px">every feature feeds the same brain.</p>
+          </div>
+        </div>
+        <p class="lead" style="font-weight: 600">
+          we didn't add features to tick boxes. we added them so the coach actually knows you.
+        </p>
+      </section>
+
+      <!-- 05 . MAINTENANCE (reveal) -->
+      <section class="slide bg-cream" style="--acc: var(--cobalt)">
+        <span class="micro">the foundation . free for everyone</span>
+        <h2 class="head" style="max-width: 24ch">
+          before any plan, you need the right maintenance. most apps guess it.
+        </h2>
+        <div class="reveal">
+          <div>
+            <div class="rl">what other apps assume you burn</div>
+            <div class="old-wrap">
+              <span class="old-num mono">2,400</span><span class="strike-line"></span>
+            </div>
+          </div>
+          <div>
+            <div class="rl">what you actually burn</div>
+            <div class="real-box">
+              <span class="real-num mono"
+                ><span class="countup" data-countup="2050">2,050</span></span
+              >
+              <span class="real-unit mono">kcal</span>
+            </div>
+          </div>
+        </div>
+        <div class="subs-label">scored from how you actually live</div>
+        <div class="inputs-row">
+          <span class="inp">desk hours</span><span class="inp">daily steps</span
+          ><span class="inp">job type</span><span class="inp">commute</span
+          ><span class="inp">recalibrates every 3 weeks</span>
+        </div>
+        <p class="body" style="margin-top: 18px">
+          get this number wrong and every deficit, surplus and macro on top of it is wrong too. it's
+          pure math, so everyone gets it free.
+        </p>
+      </section>
+
+      <!-- 06 . NUTRITION TRACKER -->
+      <section class="slide bg-cream" style="--acc: var(--teal)">
+        <span class="micro">main feature . the tracker</span>
+        <div class="split">
+          <div>
+            <h2 class="head" style="margin-bottom: 18px">track what you actually eat. properly.</h2>
+            <p class="body">
+              most trackers fumble real food, especially indian meals and the oil they're cooked in.
+              ours gets it right, and it gives you five ways in so logging never becomes the reason
+              you quit.
+            </p>
+            <div class="subs-label">ways to log</div>
+            <div class="subs">
+              <span class="s">ai photo scan</span>
+              <span class="s">barcode</span>
+              <span class="s">search</span>
+              <span class="s">voice draft</span>
+              <span class="s">"same as yesterday"</span>
+              <span class="s key">oil-aware indian meals</span>
+            </div>
+          </div>
+          <div class="phone-wrap">
+            <div class="phone">
+              <div class="p-status">
+                <span>9:41</span><span class="dots"><span></span><span></span><span></span></span>
+              </div>
+              <div class="p-head">
+                <span class="p-mark">tappd in</span><span class="p-date">today</span>
+              </div>
+              <div class="p-stack">
+                <div class="p-card">
+                  <div class="p-tag">logged today</div>
+                  <div class="p-big">1,420 <span class="u">/ 2,050 kcal</span></div>
+                  <div class="p-bar" style="margin-top: 8px">
+                    <i style="width: 69%; background: var(--teal)"></i>
+                  </div>
+                </div>
+                <div class="p-card">
+                  <div class="p-tag">lunch</div>
+                  <div class="p-listrow"><span>dal</span><span>180</span></div>
+                  <div class="p-listrow"><span>rice</span><span>200</span></div>
+                  <div class="p-listrow"><span>paneer + oil</span><span>265</span></div>
+                </div>
+                <div class="p-row" style="gap: 7px">
+                  <div class="p-btn" style="flex: 1; background: var(--teal)">scan</div>
+                  <div class="p-btn" style="flex: 1; background: var(--card); color: var(--ink)">
+                    search
+                  </div>
+                  <div class="p-btn" style="flex: 1; background: var(--card); color: var(--ink)">
+                    voice
+                  </div>
+                </div>
+              </div>
+            </div>
+            <span class="phone-cap">log . today</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 07 . AI COACH -->
+      <section class="slide bg-cream" style="--acc: var(--violet)">
+        <span class="micro">the headline feature . your coach</span>
+        <h2 class="head" style="max-width: 24ch; margin-bottom: 18px">
+          a coach that gives you the call, and the paper behind it.
+        </h2>
+        <div class="coach-stage">
+          <div class="cbub-user">why's my bench been stuck for 3 weeks?</div>
+          <div class="cbub-coach">
+            <div class="q">
+              your protein's landed 30g under target 4 of the last 7 days, and you're averaging 6h
+              of sleep. fix the protein first. push to 165g on lifting days and give it two weeks.
+            </div>
+            <div class="why-chip">
+              <span class="ic"
+                ><svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M12 7v14" />
+                  <path
+                    d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"
+                  /></svg
+              ></span>
+              why? <span class="c">morton et al. 2018</span>
+            </div>
+          </div>
+        </div>
+        <div class="subs">
+          <span class="s key">talk to it by voice</span>
+          <span class="s">reads your last 7 days</span>
+          <span class="s"><span class="countup" data-countup="200">200</span>+ meta-analyses</span>
+          <span class="s">cited every time</span>
+          <span class="s">never fakes a study</span>
+          <span class="s">safety guardrails</span>
+        </div>
+      </section>
+
+      <!-- 08 . WORKOUT -->
+      <section class="slide bg-cream" style="--acc: var(--orange)">
+        <span class="micro">main feature . workout</span>
+        <h2 class="head" style="margin-bottom: 22px">
+          generate a plan, or log your training. both, to the number.
+        </h2>
+        <div class="twopanel">
+          <div class="panel">
+            <div class="panel-h">the generator</div>
+            <div class="panel-sub">
+              show up with nothing. it builds the whole split from your muscles, days, time per
+              session, goal and bodyweight.
+            </div>
+            <div class="day-chips">
+              <span class="day-chip"><b>mon</b> push</span>
+              <span class="day-chip"><b>tue</b> pull</span>
+              <span class="day-chip"><b>thu</b> legs</span>
+              <span class="day-chip"><b>sat</b> upper</span>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-h">the logger</div>
+            <div class="panel-sub">
+              every set tracked, week over week, so you can watch the line actually move.
+            </div>
+            <div class="setline">
+              <span>incline press</span><span>60kg x8</span><span class="chk"></span>
+            </div>
+            <div class="setline">
+              <span>sets . reps . rpe . rest</span><span>logged</span><span class="chk"></span>
+            </div>
+            <div class="setline">
+              <span>progressive overload . volume / muscle</span><span>tracked</span
+              ><span class="chk"></span>
+            </div>
+          </div>
+        </div>
+        <div class="panel-note">
+          <b>the small fixes other apps miss:</b> machine taken? tap the exercise for 2 to 3
+          alternatives and swap in a tap. not doing cardio? it tells you exactly what to do, sized
+          to your weight and goal.
+        </div>
+      </section>
+
+      <!-- 09 . RECOVERY -->
+      <section class="slide bg-cream" style="--acc: var(--iris)">
+        <span class="micro">main feature . readiness</span>
+        <h2 class="head" style="max-width: 24ch; margin-bottom: 30px">
+          one score that tells you how hard to go today.
+        </h2>
+        <div class="rec">
+          <div class="score-box">
+            <div class="num"><span class="countup" data-countup="62">62</span></div>
+            <div class="lbl">readiness today</div>
+          </div>
+          <div class="breakdown">
+            <div class="bd-row">
+              <div class="bdl"><span>sleep</span><span>5h 40m . low</span></div>
+              <div class="bd-bar"><i style="width: 42%; background: var(--alert)"></i></div>
+            </div>
+            <div class="bd-row">
+              <div class="bdl"><span>resting hr trend</span><span>stable</span></div>
+              <div class="bd-bar"><i style="width: 74%"></i></div>
+            </div>
+            <div class="bd-row">
+              <div class="bdl"><span>training load (48h)</span><span>moderate</span></div>
+              <div class="bd-bar"><i style="width: 66%"></i></div>
+            </div>
+            <div class="bd-row">
+              <div class="bdl"><span>your check-in</span><span>decent</span></div>
+              <div class="bd-bar"><i style="width: 70%"></i></div>
+            </div>
+          </div>
+        </div>
+        <p class="body" style="margin-top: 24px">
+          wearables optional (apple health, health connect). drops below 50 and the coach moves
+          first, cutting today's volume before you even ask.
+        </p>
+      </section>
+
+      <!-- 10 . SEE IT -->
+      <section class="slide bg-cream" style="--acc: var(--cobalt)">
+        <span class="micro">see it</span>
+        <h2 class="head" style="margin-bottom: 6px">here's what that looks like.</h2>
+        <p class="sub" style="margin-bottom: 24px">
+          a walk through the actual product. your numbers, log by voice, a generated split, the
+          logger, the coach.
+        </p>
+        <div class="phones five">
+          <div class="phone-wrap">
+            <div class="phone">
+              <div class="p-status">
+                <span>9:41</span><span class="dots"><span></span><span></span><span></span></span>
+              </div>
+              <div class="p-head">
+                <span class="p-mark">tappd in</span><span class="p-date">today</span>
+              </div>
+              <div class="p-stack">
+                <div class="p-card">
+                  <div class="p-tag">maintenance . neat-aware</div>
+                  <div class="p-big">2,050 <span class="u">kcal</span></div>
+                </div>
+                <div class="p-card">
+                  <div class="p-row">
+                    <div style="flex: 1">
+                      <div class="p-macro">
+                        <div class="ml"><span>protein</span><span>132/165</span></div>
+                        <div class="p-bar"><i style="width: 80%"></i></div>
+                        <div class="ml" style="margin-top: 7px">
+                          <span>carbs</span><span>190/230</span>
+                        </div>
+                        <div class="p-bar">
+                          <i style="width: 82%; background: var(--orange)"></i>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="p-ready">
+                      <span class="rn">62</span><span class="rl">ready</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-btn">log a meal</div>
+              </div>
+            </div>
+            <span class="phone-cap">home</span>
+          </div>
+
+          <div class="phone-wrap">
+            <div class="phone">
+              <div class="p-status">
+                <span>9:41</span><span class="dots"><span></span><span></span><span></span></span>
+              </div>
+              <div class="p-chathead">log a meal</div>
+              <div class="p-stack">
+                <div class="p-card" style="display: flex; align-items: center; gap: 9px">
+                  <span class="ic" style="font-size: 16px; color: var(--cobalt)"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <rect x="9" y="2" width="6" height="12" rx="3" />
+                      <path d="M5 10a7 7 0 0 0 14 0M12 17v5" /></svg
+                  ></span>
+                  <span class="wave"
+                    ><svg
+                      viewBox="0 0 64 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.4"
+                      stroke-linecap="round"
+                    >
+                      <path
+                        d="M3 12h0M9 8v8M15 4v16M21 9v6M27 5v14M33 11v2M39 7v10M45 9v6M51 4v16M57 10v4M63 12h0"
+                      /></svg
+                  ></span>
+                  <span class="mono" style="font-size: 9px; color: var(--muted)">0:14</span>
+                </div>
+                <div class="p-card">
+                  <div class="p-tag">drafted from your voice</div>
+                  <div class="p-listrow"><span>2 eggs</span><span>100g</span></div>
+                  <div class="p-listrow"><span>toast</span><span>2 slc</span></div>
+                  <div class="p-listrow"><span>black coffee</span><span>0</span></div>
+                </div>
+                <div class="p-btn">check weights . log</div>
+              </div>
+            </div>
+            <span class="phone-cap">log . by voice</span>
+          </div>
+
+          <div class="phone-wrap">
+            <div class="phone">
+              <div class="p-status">
+                <span>9:41</span><span class="dots"><span></span><span></span><span></span></span>
+              </div>
+              <div class="p-chathead">your split</div>
+              <div class="p-stack">
+                <div class="p-tag" style="padding: 0 2px">built for 4 days . 45 min</div>
+                <div class="p-daycard"><span class="d">mon</span><span>push</span></div>
+                <div class="p-daycard"><span class="d">tue</span><span>pull</span></div>
+                <div class="p-daycard"><span class="d">thu</span><span>legs</span></div>
+                <div class="p-daycard"><span class="d">sat</span><span>upper</span></div>
+                <div class="p-btn">start monday . push</div>
+              </div>
+            </div>
+            <span class="phone-cap">generator . split</span>
+          </div>
+
+          <div class="phone-wrap">
+            <div class="phone">
+              <div class="p-status">
+                <span>9:41</span><span class="dots"><span></span><span></span><span></span></span>
+              </div>
+              <div class="p-chathead">incline press</div>
+              <div class="p-stack">
+                <div class="p-card">
+                  <div class="p-listrow">
+                    <span>set 1</span><span>60kg x8</span><span class="chk"></span>
+                  </div>
+                  <div class="p-listrow">
+                    <span>set 2</span><span>60kg x8</span><span class="chk"></span>
+                  </div>
+                  <div class="p-listrow">
+                    <span>set 3</span><span>60kg x7</span><span class="chk"></span>
+                  </div>
+                </div>
+                <div class="p-card" style="border-color: var(--orange)">
+                  <div class="p-mini-tag">machine busy? swap it</div>
+                  <div class="p-alt">
+                    <span class="p-altchip on">db press</span><span class="p-altchip">smith</span
+                    ><span class="p-altchip">dips</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <span class="phone-cap">logger . swap</span>
+          </div>
+
+          <div class="phone-wrap">
+            <div class="phone">
+              <div class="p-status">
+                <span>9:41</span><span class="dots"><span></span><span></span><span></span></span>
+              </div>
+              <div class="p-chathead">coach</div>
+              <div class="p-stack">
+                <div class="bub bub-user">why's my bench stalling?</div>
+                <div>
+                  <div class="bub bub-coach">
+                    your protein's 32g short, 3 days this week. bump it to 165g.
+                  </div>
+                  <div class="p-why">
+                    <span class="ic"
+                      ><svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M12 7v14" />
+                        <path
+                          d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"
+                        /></svg
+                    ></span>
+                    why? <span class="c">morton 2018</span>
+                  </div>
+                </div>
+                <div class="p-input"><span>ask anything</span><span class="send"></span></div>
+              </div>
+            </div>
+            <span class="phone-cap">coach</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 11 . NO HUMAN IN THE LOOP -->
+      <section class="slide bg-cream" style="--acc: var(--cobalt)">
+        <span class="micro">no human in the loop . no human error</span>
+        <h2 class="head" style="max-width: 22ch">
+          nobody eyeballs your macros. nobody guesses your sets.
+        </h2>
+        <p class="lead" style="font-weight: 500; margin-bottom: 30px">
+          every number is computed, cited and checked by the system. to the number, every time.
+          here's what stops it lying to you.
+        </p>
+        <div class="receipts">
+          <div class="receipt">
+            <div class="rn mono">01</div>
+            <div class="rt">
+              <b>structured output.</b
+              ><span
+                >the model returns clean fields, not freeform paragraphs it can hide a lie
+                inside.</span
+              >
+            </div>
+          </div>
+          <div class="receipt">
+            <div class="rn mono">02</div>
+            <div class="rt">
+              <b>citation check.</b
+              ><span
+                >every source is verified against our study table. fabricated ones get dropped
+                silently.</span
+              >
+            </div>
+          </div>
+          <div class="receipt">
+            <div class="rn mono">03</div>
+            <div class="rt">
+              <b>guardrails.</b
+              ><span
+                >hard safety limits the model cannot talk its way around, checked after every
+                reply.</span
+              >
+            </div>
+          </div>
+          <div class="receipt">
+            <div class="rn mono">04</div>
+            <div class="rt">
+              <b>weekly evals.</b
+              ><span
+                >a 50 question golden set, scored every week. quality drops, we roll it back.</span
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 12 . ONE APP -->
+      <section class="slide bg-cream" style="--acc: var(--cobalt)">
+        <span class="micro">it all lives in one place</span>
+        <h2 class="head" style="margin-bottom: 24px">five main features. one brain behind them.</h2>
+        <div class="grid6">
+          <div class="feat">
+            <div class="fn">01</div>
+            <h4>maintenance</h4>
+            <p>neat-aware, free for all, recalibrates every 3 weeks.</p>
+          </div>
+          <div class="feat">
+            <div class="fn">02</div>
+            <h4>nutrition tracker</h4>
+            <p>photo, barcode, search, voice, templates. oil-aware.</p>
+          </div>
+          <div class="feat">
+            <div class="fn">03</div>
+            <h4>ai coach</h4>
+            <p>contextual, cited, talks like a person.</p>
+          </div>
+          <div class="feat">
+            <div class="fn">04</div>
+            <h4>workout</h4>
+            <p>generator plus logger, to the number.</p>
+          </div>
+          <div class="feat">
+            <div class="fn">05</div>
+            <h4>readiness</h4>
+            <p>a daily score that sets the day's effort.</p>
+          </div>
+          <div class="feat">
+            <div class="fn">+</div>
+            <h4>recipes</h4>
+            <p>reddit-style, upvote only, macros verified.</p>
+          </div>
+        </div>
+        <div class="mini-chips">
+          <span class="mini">periodized nutrition</span>
+          <span class="mini">weight trend</span>
+          <span class="mini">micros: b12, iron, vit d</span>
+          <span class="mini">exercise swaps</span>
+          <span class="mini">cardio suggestions</span>
+        </div>
+      </section>
+
+      <!-- 13 . CLOSE -->
+      <section class="slide bg-cobalt">
+        <span class="micro plain">the pitch, one line</span>
+        <h1 class="hero">stop guessing.<br />get tapped in.</h1>
+        <p class="lead" style="margin-top: 24px; opacity: 0.85; font-weight: 500">
+          the only fitness app that does the math, shows you the paper, and still talks like a
+          person.
+        </p>
+        <div class="cta">
+          drop my plan
+          <span class="ic"
+            ><svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" /></svg
+          ></span>
+        </div>
+        <p
+          class="sub"
+          style="
+            margin-top: 26px;
+            font-family: &quot;Geist Mono&quot;, monospace;
+            letter-spacing: 0.1em;
+          "
+        >
+          be fr with yourself.
+        </p>
+      </section>
+    </div>
+
+    <script>
+      const slides = Array.from(document.querySelectorAll(".slide"));
+      const total = slides.length;
+      let i = 0;
+      const counter = document.getElementById("counter");
+      const progress = document.getElementById("progress");
+      const hint = document.getElementById("hint");
+      const brandmark = document.getElementById("brandmark");
+      const pad = (n) => String(n).padStart(2, "0");
+
+      function runCountups(slide) {
+        slide.querySelectorAll("[data-countup]").forEach((el) => {
+          const target = +el.getAttribute("data-countup");
+          const dur = 900,
+            start = performance.now();
+          (function tick(now) {
+            const p = Math.min(1, (now - start) / dur);
+            el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))).toLocaleString();
+            if (p < 1) requestAnimationFrame(tick);
+            else el.textContent = target.toLocaleString();
+          })(performance.now());
+        });
+      }
+
+      function show(n) {
+        i = Math.max(0, Math.min(total - 1, n));
+        slides.forEach((s, idx) => s.classList.toggle("active", idx === i));
+        counter.textContent = pad(i + 1) + " / " + pad(total);
+        progress.style.width = (i / (total - 1)) * 100 + "%";
+        const dark = slides[i].classList.contains("bg-cobalt");
+        brandmark.style.color = dark ? "var(--cream)" : "var(--ink)";
+        runCountups(slides[i]);
+      }
+      const next = () => show(i + 1);
+      const prev = () => show(i - 1);
+
+      document.addEventListener("keydown", (e) => {
+        if (["ArrowRight", "ArrowDown", " ", "PageDown"].includes(e.key)) {
+          e.preventDefault();
+          next();
+        } else if (["ArrowLeft", "ArrowUp", "PageUp"].includes(e.key)) {
+          e.preventDefault();
+          prev();
+        } else if (e.key === "Home") show(0);
+        else if (e.key === "End") show(total - 1);
+        else if (e.key >= "1" && e.key <= "9") {
+          const idx = +e.key - 1;
+          if (idx < total) show(idx);
+        } else if (e.key.toLowerCase() === "f") {
+          if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+          else document.exitFullscreen();
+        }
+      });
+
+      let sx = null;
+      document.addEventListener("touchstart", (e) => (sx = e.touches[0].clientX), {
+        passive: true,
+      });
+      document.addEventListener(
+        "touchend",
+        (e) => {
+          if (sx === null) return;
+          const dx = e.changedTouches[0].clientX - sx;
+          if (Math.abs(dx) > 50) dx < 0 ? next() : prev();
+          sx = null;
+        },
+        { passive: true },
+      );
+
+      setTimeout(() => (hint.style.opacity = "0"), 5000);
+      show(0);
+    </script>
+  </body>
+</html>
