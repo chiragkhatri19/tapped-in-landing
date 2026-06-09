@@ -164,7 +164,7 @@ function Index() {
     // a quick flick of the wheel, so nothing drags and attention never drifts.
     const mkST = (trigger: string, end: string) =>
       isDesktop
-        ? { trigger, start: "top top", end, pin: true, scrub: 0.4, anticipatePin: 1 }
+        ? { trigger, start: "top top", end, pin: true, scrub: 1, anticipatePin: 1 }
         : { trigger, start: "top 82%", once: true };
 
     const ctx = gsap.context(() => {
@@ -188,14 +188,14 @@ function Index() {
 
     // ── COMP — market problem ─────────────────────────────────────────────────
     gsap.timeline({
-      scrollTrigger: mkST("#sec-comp", "+=380")
+      scrollTrigger: mkST("#sec-comp", "+=600")
     })
     .fromTo(".comp-card",        { opacity:0, scale:0.88, y:32 }, { opacity:1, scale:1, y:0, stagger:0.1 })
     .fromTo(".price-strike-line",{ scaleX:0 },                    { scaleX:1, transformOrigin:"left center" }, "-=0.4");
 
     // ── SOLUTION — evidence-based stack ──────────────────────────────────────
     gsap.timeline({
-      scrollTrigger: mkST("#sec-solution", "+=620")
+      scrollTrigger: mkST("#sec-solution", "+=900")
     })
     .fromTo(".sol-left-panel",   { opacity:0, x:-40 },        { opacity:1, x:0 })
     .fromTo(".sol-card-wrapper", { opacity:0, scale:0.93 },   { opacity:1, scale:1 }, "-=0.4")
@@ -205,7 +205,7 @@ function Index() {
     // ── F1 — accurate maintenance ─────────────────────────────────────────────
     const kcalObj = { val: 2400 };
     gsap.timeline({
-      scrollTrigger: mkST("#sec-f1", "+=560")
+      scrollTrigger: mkST("#sec-f1", "+=800")
     })
     .fromTo(".f1-title",    { opacity:0, y:16 }, { opacity:1, y:0 })
     .fromTo(".f1-subtitle", { opacity:0, y:16 }, { opacity:1, y:0 }, "-=0.3")
@@ -217,7 +217,7 @@ function Index() {
 
     // ── F2 — AI photo scan ────────────────────────────────────────────────────
     gsap.timeline({
-      scrollTrigger: mkST("#sec-f2", "+=460")
+      scrollTrigger: mkST("#sec-f2", "+=700")
     })
     .fromTo(".f2-text-col",  { opacity:0, x:-32 },      { opacity:1, x:0 })
     .fromTo(".f2-card-col",  { opacity:0, scale:0.94 }, { opacity:1, scale:1 }, "-=0.4")
@@ -226,7 +226,7 @@ function Index() {
 
     // ── F2B — four ways to log ────────────────────────────────────────────────
     gsap.timeline({
-      scrollTrigger: mkST("#sec-f2b", "+=420")
+      scrollTrigger: mkST("#sec-f2b", "+=650")
     })
     .fromTo(".f2b-title",    { opacity:0, y:16 }, { opacity:1, y:0 })
     .fromTo(".f2b-subtitle", { opacity:0, y:16 }, { opacity:1, y:0 }, "-=0.3")
@@ -234,7 +234,7 @@ function Index() {
 
     // ── F3 — workout generator ────────────────────────────────────────────────
     gsap.timeline({
-      scrollTrigger: mkST("#sec-f3", "+=520")
+      scrollTrigger: mkST("#sec-f3", "+=750")
     })
     .fromTo(".f3-text-col",   { opacity:0, x:-32 },       { opacity:1, x:0 })
     .fromTo(".f3-card-col",   { opacity:0, scale:0.94 },  { opacity:1, scale:1 }, "-=0.4")
@@ -243,7 +243,7 @@ function Index() {
 
     // ── F3B — workout logger ──────────────────────────────────────────────────
     gsap.timeline({
-      scrollTrigger: mkST("#sec-f3b", "+=480")
+      scrollTrigger: mkST("#sec-f3b", "+=700")
     })
     .fromTo(".f3b-card-col", { opacity:0, x:-32 },      { opacity:1, x:0 })
     .fromTo(".f3b-text-col", { opacity:0, x:32 },       { opacity:1, x:0 }, "-=0.4")
@@ -253,7 +253,7 @@ function Index() {
 
     // ── F4 — AI coach ─────────────────────────────────────────────────────────
     gsap.timeline({
-      scrollTrigger: mkST("#sec-f4", "+=460")
+      scrollTrigger: mkST("#sec-f4", "+=700")
     })
     .fromTo(".f4-text-col",  { opacity:0, x:32 },        { opacity:1, x:0 })
     .fromTo("#f4-coach-chat",{ opacity:0, y:20, scale:0.93 }, { opacity:1, y:0, scale:1 }, "-=0.4")
@@ -262,7 +262,7 @@ function Index() {
 
     // ── WHY BUTTON — evidence card explainer ─────────────────────────────────
     gsap.timeline({
-      scrollTrigger: mkST("#sec-why", "+=460")
+      scrollTrigger: mkST("#sec-why", "+=700")
     })
     .fromTo(".why-title",    { opacity:0, y:16 }, { opacity:1, y:0 })
     .fromTo(".why-subtitle", { opacity:0, y:20 }, { opacity:1, y:0 }, "-=0.3")
@@ -271,7 +271,7 @@ function Index() {
 
     // ── SYS — system integrity ────────────────────────────────────────────────
     gsap.timeline({
-      scrollTrigger: mkST("#sec-sys", "+=400")
+      scrollTrigger: mkST("#sec-sys", "+=600")
     })
     .fromTo(".sys-title",    { opacity:0, y:16 }, { opacity:1, y:0 })
     .fromTo(".sys-subtitle", { opacity:0, y:16 }, { opacity:1, y:0 }, "-=0.3")
