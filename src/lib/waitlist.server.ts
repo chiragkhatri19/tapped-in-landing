@@ -2,7 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 import * as path from "node:path";
 import process from "node:process";
 
-const DB_PATH = path.join(process.cwd(), "waitlist.db");
+const DB_PATH = process.env.SQLITE_DB_PATH || path.join(process.cwd(), "waitlist.db");
 
 let db: DatabaseSync | null = null;
 
