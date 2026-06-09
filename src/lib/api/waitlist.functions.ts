@@ -10,13 +10,8 @@ export const joinWaitlist = createServerFn({ method: "POST" })
 
     if (webappUrl) {
       try {
-        const response = await fetch(webappUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email, timestamp }),
-        });
+        const url = `${webappUrl}?action=signup&email=${encodeURIComponent(email)}`;
+        const response = await fetch(url);
         const result = await response.json() as { success: boolean; exists?: boolean; message?: string; count?: number };
         
         if (result.success) {
