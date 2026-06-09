@@ -6,6 +6,23 @@ export const joinWaitlist = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const email = data.email.trim().toLowerCase();
     const timestamp = new Date().toISOString();
+    const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+    const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+
+    if (serviceAccountEmail && privateKey) {
+      try {
+        const { addEmailToGoogleSheet } = await import("../google-sheets.server");
+        return await addEmailToGoogleSheet(email, timestamp);
+      } catch (e) {
+        console.error("Error submitting waitlist email to Google Sheets API:", e);
+        return {
+          success: false,
+          count: 0,
+          message: "failed to connect to sheets server.",
+        };
+      }
+    }
+
     const webappUrl = process.env.GOOGLE_SHEET_WEBAPP_URL;
 
     if (webappUrl) {
@@ -58,6 +75,24 @@ export const joinWaitlist = createServerFn({ method: "POST" })
   });
 
 export const getWaitlistCount = createServerFn({ method: "GET" }).handler(async () => {
+  const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+
+  if (serviceAccountEmail && privateKey) {
+    try {
+      const { getGoogleSheetCount } = await import("../google-sheets.server");
+      const count = await getGoogleSheetCount();
+      return {
+        count,
+      };
+    } catch (e) {
+      console.error("Error fetching waitlist count from Google Sheets API:", e);
+      return {
+        count: 0,
+      };
+    }
+  }
+
   const webappUrl = process.env.GOOGLE_SHEET_WEBAPP_URL;
   if (webappUrl) {
     try {
