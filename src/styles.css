@@ -266,3 +266,29 @@ body {
   scrollbar-width: none;  /* Firefox */
 }
 
+/* Remove tap flash highlight on mobile */
+a,
+button,
+summary,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation; /* removes 300ms tap delay */
+}
+
+/* Ensure inputs don't zoom in on focus on iOS (font-size must be >= 16px) */
+@media (max-width: 767px) {
+  input[type="email"],
+  input[type="text"],
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Safari 3D transform stability for the flip card */
+.sol-card-inner {
+  -webkit-transform-style: preserve-3d;
+}
+.sol-card-inner > div {
+  -webkit-backface-visibility: hidden;
+}
+

@@ -165,7 +165,7 @@ function Index() {
     const mkST = (trigger: string, end: string) =>
       isDesktop
         ? { trigger, start: "top top", end, pin: true, scrub: 1, anticipatePin: 1 }
-        : { trigger, start: "top 82%", once: true };
+        : { trigger, start: "top 85%", once: true };
 
     const ctx = gsap.context(() => {
 
@@ -175,8 +175,7 @@ function Index() {
       .fromTo(".hero-title",           { y: 30, opacity: 0  }, { y: 0, opacity: 1, duration: 0.55, ease: "power2.out" }, "-=0.2")
       .fromTo(".hero-subtitle",        { y: 18, opacity: 0  }, { y: 0, opacity: 1, duration: 0.45, ease: "power2.out" }, "-=0.3")
       .fromTo(".hero-form-wrapper",    { y: 18, opacity: 0  }, { y: 0, opacity: 1, duration: 0.45, ease: "power2.out" }, "-=0.3")
-      .fromTo(".hero-console-wrapper", { x: 24, opacity: 0  }, { x: 0, opacity: 1, duration: 0.65, ease: "back.out(1.2)" }, "-=0.5")
-      .fromTo(".scroll-prompt",        { y: 12, opacity: 0  }, { y: 0, opacity: 1, duration: 0.35, ease: "power2.out" }, "-=0.2");
+      .fromTo(".hero-console-wrapper", { x: 24, opacity: 0  }, { x: 0, opacity: 1, duration: 0.65, ease: "back.out(1.2)" }, "-=0.5");
 
     // ── SCROLL-LOCKED PINNED ANIMATIONS ─────────────────────────────────────
     // Each section pins to viewport top; animation scrubs with scroll.
@@ -300,7 +299,17 @@ function Index() {
 
     }); // end gsap.context
 
-    return () => { ctx.revert(); };
+    // Google Fonts load async and reflow text → positions go stale → re-refresh once fonts settle
+    document.fonts.ready.then(() => ScrollTrigger.refresh());
+
+    // Re-calculate on resize / orientation change (phone rotation invalidates all positions)
+    const handleResize = () => ScrollTrigger.refresh();
+    window.addEventListener("resize", handleResize, { passive: true });
+
+    return () => {
+      ctx.revert();
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
 
@@ -340,7 +349,7 @@ function Index() {
       {/* SECTION 1: THE HERO */}
       <section
         id="sec-hero"
-        className="min-h-screen w-full flex flex-col relative overflow-hidden"
+        className="min-h-mobile-section w-full flex flex-col relative overflow-hidden"
         onMouseMove={handleHeroMouseMove}
       >
         <div className="absolute inset-0 bg-[radial-gradient(#111111_1.5px,transparent_1.5px)] [background-size:24px_24px] opacity-[0.06] pointer-events-none" />
@@ -399,6 +408,11 @@ function Index() {
                     placeholder="you@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    inputMode="email"
+                    autoComplete="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
                     className="flex-1 bg-card-light text-ink border-[3px] border-ink rounded-[10px] px-5 py-3.5 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-electric-light shadow-v5-sm transition-all placeholder:text-ink/30"
                     required
                   />
@@ -550,7 +564,7 @@ function Index() {
       </section>
 
       {/* SECTION 2: KINETIC MARQUEE */}
-      <div className="overflow-hidden w-full my-8">
+      <div className="overflow-hidden w-full my-8" style={{ contain: "paint" }}>
       <div className="w-[110vw] relative -left-[5vw] transform rotate-[-2deg] bg-ink py-4 md:py-5 border-y-[3px] border-ink flex select-none shadow-[0_15px_30px_rgba(17,17,17,0.45)] z-30">
         <motion.div
           className="flex whitespace-nowrap text-volt font-mono font-semibold text-xl md:text-3xl tracking-tight gap-8 uppercase-none lowercase pr-8"
@@ -1505,6 +1519,11 @@ function Index() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@domain.com"
+                  inputMode="email"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   className="w-full bg-transparent text-bone font-bold placeholder:text-bone/30 text-base border-[3px] border-bone rounded-[10px] px-5 py-4 outline-none transition-all duration-100 shadow-v5-dark focus:shadow-v5-lg-dark focus:translate-x-[-2px] focus:translate-y-[-2px] lowercase focus:ring-2 focus:ring-volt"
                   disabled={isSubmitting}
                 />
