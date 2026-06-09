@@ -14,14 +14,14 @@ if (typeof window !== "undefined") {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "tappd in // the fitness app that shows its work" },
+      { title: "tappd in" },
       {
         name: "description",
         content: "evidence-based fitness os. accurate NEAT-scored calorie targets, mandatory oil tracking, and a peer-reviewed study behind every number. join the waitlist.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://tappedin.site" },
-      { property: "og:title", content: "tappd in // the fitness app that shows its work" },
+      { property: "og:title", content: "tappd in" },
       {
         property: "og:description",
         content: "accurate calorie targets, mandatory oil tracking, and a peer-reviewed study behind every number. join the waitlist for 20% off.",
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/")({
       { property: "og:image:alt", content: "tappd in. the fitness app that shows its work." },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@tappd_in" },
-      { name: "twitter:title", content: "tappd in // the fitness app that shows its work" },
+      { name: "twitter:title", content: "tappd in" },
       {
         name: "twitter:description",
         content: "accurate calorie targets, mandatory oil tracking, and a study behind every number. join the waitlist for 20% off.",
@@ -351,9 +351,9 @@ function Index() {
 
         {/* NAV */}
         <header className="w-full max-w-7xl mx-auto px-5 md:px-8 flex justify-between items-center pt-6 pb-2 z-10 flex-shrink-0">
-          <div className="flex items-center gap-2 select-none">
-            <Logo size={56} className="w-[44px] h-[44px] md:w-[56px] md:h-[56px]" />
-            <span className="font-display font-black text-xl tracking-tighter lowercase leading-none">tappd in</span>
+          <div className="flex items-center gap-2.5 select-none">
+            <Logo size={68} className="w-[52px] h-[52px] md:w-[68px] md:h-[68px]" />
+            <span className="font-display font-black text-2xl tracking-tighter lowercase leading-none">tappd in</span>
           </div>
           <div className="flex items-center gap-2 border-[3px] border-ink bg-volt pl-2.5 pr-3.5 py-2 rounded-[10px] shadow-v5-sm select-none">
             <div className="hidden sm:flex -space-x-2.5">

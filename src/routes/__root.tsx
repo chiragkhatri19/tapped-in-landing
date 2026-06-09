@@ -73,7 +73,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "tappd in // the fitness app that shows its work" },
+      { title: "tappd in" },
       {
         name: "description",
         content: "evidence-based fitness os. accurate NEAT-scored calorie targets, mandatory oil tracking, and a peer-reviewed study behind every number.",
@@ -81,7 +81,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "author", content: "tappd in" },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://tappedin.site" },
-      { property: "og:title", content: "tappd in // the fitness app that shows its work" },
+      { property: "og:title", content: "tappd in" },
       {
         property: "og:description",
         content: "accurate calorie targets, mandatory oil tracking, and a study behind every number. join the waitlist for 20% off.",
