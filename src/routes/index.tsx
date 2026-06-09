@@ -387,21 +387,40 @@ function Index() {
             {/* LEFT */}
             <div className="col-span-1 lg:col-span-7 flex flex-col gap-5">
               <div className="hero-title opacity-0">
-                <h1 className="font-display font-black text-[2.1rem] sm:text-[3.2rem] md:text-[4.2rem] lg:text-[5rem] tracking-tighter leading-[0.9] text-ink">
+                {/* Eyebrow chip */}
+                <div className="inline-flex items-center gap-2 border-[2px] border-ink bg-card-light rounded-full px-3 py-1.5 mb-4 shadow-v5-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-electric-light animate-volt-blink flex-shrink-0" />
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-ink">beta · limited founder spots open</span>
+                </div>
+                <h1 className="font-display font-black text-[2.3rem] sm:text-[3.4rem] md:text-[4.4rem] lg:text-[5.2rem] tracking-tighter leading-[0.88] text-ink">
                   the fitness app<br />
                   that shows<br />
-                  <span className="bg-volt border-[3px] border-ink rounded-[12px] shadow-v5-sm px-3 py-0.5 inline-block mt-1 leading-snug">
+                  <span className="bg-volt border-[3px] border-ink rounded-[12px] shadow-v5-sm px-3 py-1 inline-block mt-1.5 leading-snug">
                     its work.
                   </span>
                 </h1>
               </div>
 
-              <p className="hero-subtitle font-sans font-medium text-base md:text-[1.05rem] text-muted-fg-light leading-relaxed max-w-[480px] opacity-0">
-                most apps inflate your numbers to keep you happy. we calculate the real ones and cite the study behind every single one.
+              <p className="hero-subtitle font-sans font-medium text-base md:text-[1.1rem] text-muted-fg-light leading-relaxed max-w-[500px] opacity-0">
+                most apps inflate your numbers to keep you happy. we calculate the real ones — and cite the peer-reviewed study behind every single one.
               </p>
 
-              <div className="hero-form-wrapper flex flex-col gap-2.5 opacity-0">
-                <form onSubmit={handleFormSubmit} className="flex flex-col sm:flex-row gap-2.5 max-w-[460px]">
+              {/* 3-feature quick wins */}
+              <div className="hero-subtitle flex flex-wrap gap-2 opacity-0">
+                {[
+                  { icon: "◎", label: "NEAT-scored calories" },
+                  { icon: "◈", label: "photo food logging" },
+                  { icon: "◉", label: "study behind every number" },
+                ].map((f) => (
+                  <span key={f.label} className="inline-flex items-center gap-1.5 font-mono text-[10px] font-bold border-[2px] border-ink/20 bg-card-light rounded-full px-3 py-1.5 text-ink/70">
+                    <span className="text-electric-light">{f.icon}</span>
+                    {f.label}
+                  </span>
+                ))}
+              </div>
+
+              <div className="hero-form-wrapper flex flex-col gap-3 opacity-0">
+                <form onSubmit={handleFormSubmit} className="flex flex-col sm:flex-row gap-2.5 max-w-[480px]">
                   <input
                     type="email"
                     aria-label="email address"
@@ -421,27 +440,33 @@ function Index() {
                     disabled={isSubmitting}
                     className="bg-electric-light text-bone font-mono font-bold text-sm border-[3px] border-ink rounded-[10px] px-7 py-3.5 shadow-v5-sm hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-v5 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer whitespace-nowrap"
                   >
-                    {isSubmitting ? "joining..." : "join the waitlist"}
+                    {isSubmitting ? "joining..." : "join the waitlist →"}
                   </button>
                 </form>
-                <div className="flex flex-col gap-1">
-                  <p className="font-mono text-[10px] text-muted-fg-light">
-                    monthly <span className="line-through opacity-40">$10</span>{" "}
-                    <span className="font-bold text-ink">$7.99</span>
-                    <span className="mx-1.5 opacity-30">·</span>
-                    yearly <span className="line-through opacity-40">$59.99</span>{" "}
-                    <span className="font-bold text-ink">$47.99</span>
-                    <span className="text-ink/40 ml-1">(save 20%). locked at signup.</span>
-                  </p>
-                  <p className="font-mono text-[9px] font-bold uppercase tracking-wider text-ink/30">
-                    NO SPAM · ONE EMAIL AT LAUNCH · NO CREDIT CARD
-                  </p>
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <p className="font-mono text-[10px] text-muted-fg-light">
+                      monthly <span className="line-through opacity-40">$10</span>{" "}
+                      <span className="font-bold text-ink">$7.99</span>
+                      <span className="mx-1.5 opacity-30">·</span>
+                      yearly <span className="line-through opacity-40">$59.99</span>{" "}
+                      <span className="font-bold text-ink">$47.99</span>
+                      <span className="text-ink/40 ml-1">(save 20%). locked at signup.</span>
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 font-mono text-[9px] font-bold uppercase tracking-wider text-ink/30">
+                    <span>✓ no spam</span>
+                    <span className="opacity-40">·</span>
+                    <span>✓ one email at launch</span>
+                    <span className="opacity-40">·</span>
+                    <span>✓ no credit card</span>
+                  </div>
                 </div>
                 <AnimatePresence mode="wait">
                   {feedback && (
                     <motion.div
                       initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
-                      className={`max-w-[460px] border-[2px] rounded-[8px] px-3 py-2 font-mono font-semibold text-[11px] flex items-center gap-2 ${feedback.success ? "bg-volt text-ink border-ink" : "bg-pink text-bone border-ink"}`}
+                      className={`max-w-[480px] border-[2px] rounded-[8px] px-3 py-2 font-mono font-semibold text-[11px] flex items-center gap-2 ${feedback.success ? "bg-volt text-ink border-ink" : "bg-pink text-bone border-ink"}`}
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
                       <span>{feedback.message}</span>
@@ -905,9 +930,9 @@ function Index() {
               take a photo of any dish. the app reads what is on the plate, gives you editable weights and portions, and lets you adjust before anything gets logged. nothing is automatic.
             </p>
             <div className="f2-oil-badge bg-volt border-[3px] border-ink rounded-[10px] px-4 py-3 shadow-v5-sm opacity-0">
-              <span className="font-mono text-[9px] font-bold uppercase tracking-wider text-ink/60 block mb-1">the detail no other app has</span>
+              <span className="font-mono text-[9px] font-bold uppercase tracking-wider text-ink/60 block mb-1">⚠ oil detected · roasted cauliflower</span>
               <p className="font-sans font-bold text-sm text-ink">
-                cooked meal? we flag it and make you log the oil separately. ghee, butter, coconut oil. the calories nobody counts. we count them.
+                roasted means oil. we flag it and make you log it separately. olive oil, ghee, butter. the hidden calories nobody else counts — we do.
               </p>
             </div>
           </div>
@@ -917,19 +942,31 @@ function Index() {
                 <span className="font-mono text-[10px] font-bold text-ink/40 uppercase tracking-wider">ai scan result</span>
                 <span className="bg-electric-light text-bone font-mono text-[9px] font-bold px-2.5 py-1 rounded-full border-[2px] border-ink">ai scan</span>
               </div>
-              {/* Mock food image area */}
-              <div className="relative bg-ink/6 border-[2px] border-ink/20 rounded-[10px] h-28 mb-4 overflow-hidden flex items-center justify-center">
-                <div className="absolute inset-3 border border-dashed border-ink/20 rounded-[6px]" />
-                <div className="absolute left-0 right-0 h-[2px] bg-electric-light/60 shadow-[0_0_8px_rgba(43,58,255,0.5)]" style={{ top: "55%" }} />
-                <span className="font-mono text-[9px] text-ink/30 uppercase tracking-widest">scanning image</span>
+              {/* Real food photo with scanner overlay */}
+              <div className="relative border-[2px] border-ink/20 rounded-[10px] h-44 mb-4 overflow-hidden">
+                <img
+                  src="/chicken-bowl.jpg"
+                  alt="buffalo chicken bowl with brown rice and roasted cauliflower"
+                  className="w-full h-full object-cover"
+                />
+                {/* Scanning gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-b from-electric-light/10 via-transparent to-ink/20 pointer-events-none" />
+                {/* Scanner beam line */}
+                <div className="absolute left-0 right-0 h-[2px] bg-electric-light shadow-[0_0_12px_4px_rgba(43,58,255,0.6)]" style={{ top: "55%" }} />
+                {/* Corner brackets */}
+                <div className="absolute top-2.5 left-2.5 w-5 h-5 border-t-2 border-l-2 border-electric-light rounded-tl" />
+                <div className="absolute top-2.5 right-2.5 w-5 h-5 border-t-2 border-r-2 border-electric-light rounded-tr" />
+                <div className="absolute bottom-2.5 left-2.5 w-5 h-5 border-b-2 border-l-2 border-electric-light rounded-bl" />
+                <div className="absolute bottom-2.5 right-2.5 w-5 h-5 border-b-2 border-r-2 border-electric-light rounded-br" />
+                <span className="absolute bottom-2 left-1/2 -translate-x-1/2 font-mono text-[8px] font-bold text-bone/90 uppercase tracking-widest bg-ink/50 px-2 py-0.5 rounded">analysing</span>
               </div>
               {/* Detected ingredients */}
               <div className="flex flex-col gap-2 mb-4">
                 <span className="font-mono text-[9px] text-muted-fg-light uppercase tracking-wider">detected</span>
                 {[
-                  { name: "grilled salmon fillet", weight: "180g", kcal: "320 kcal" },
-                  { name: "sweet potato, baked", weight: "150g", kcal: "130 kcal" },
-                  { name: "asparagus, steamed",  weight: "80g",  kcal: "18 kcal" },
+                  { name: "buffalo chicken, shredded", weight: "150g", kcal: "192 kcal" },
+                  { name: "brown rice, cooked",        weight: "185g", kcal: "219 kcal" },
+                  { name: "roasted cauliflower",        weight: "85g",  kcal: "52 kcal" },
                 ].map((item) => (
                   <div key={item.name} className="f2-scan-item flex justify-between items-center font-mono text-xs py-2 px-3 bg-bone border border-ink/10 rounded-[7px] opacity-0">
                     <div className="flex flex-col">
@@ -941,8 +978,8 @@ function Index() {
                 ))}
               </div>
               <div className="flex justify-between items-center pt-3 border-t border-ink/10">
-                <span className="font-mono text-[9px] text-muted-fg-light">*pulled from icmr-nin, usda, and open food facts</span>
-                <span className="font-mono text-xs font-black text-ink">468 kcal</span>
+                <span className="font-mono text-[9px] text-muted-fg-light">*pulled from usda, icmr-nin, and open food facts</span>
+                <span className="font-mono text-xs font-black text-ink">463 kcal</span>
               </div>
             </div>
           </div>

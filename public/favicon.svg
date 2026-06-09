@@ -1,7 +1,14 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect x="432" y="272" width="160" height="480" fill="#111111"/>
-<path d="M336 472C336 494.091 353.909 512 376 512H648C670.091 512 688 494.091 688 472V392C688 369.909 670.091 352 648 352H376C353.909 352 336 369.909 336 392V472Z" fill="#111111"/>
-<path d="M336 419H592V352H336V419Z" fill="#111111"/>
-<path d="M388 512H688V352H388V512Z" fill="#111111"/>
-<rect x="632" y="696" width="56" height="56" fill="#2945FF"/>
+  <!-- Volt yellow background -->
+  <rect width="1024" height="1024" fill="#E8FF00"/>
+  <!-- Brutalist thick black border -->
+  <rect x="32" y="32" width="960" height="960" fill="none" stroke="#111111" stroke-width="64"/>
+  <!-- Logo scaled 1.5x from center (248,152)→(776,872) -->
+  <g transform="translate(512,512) scale(1.5) translate(-512,-512)">
+    <rect x="432" y="272" width="160" height="480" fill="#111111"/>
+    <path d="M336 472C336 494.091 353.909 512 376 512H648C670.091 512 688 494.091 688 472V392C688 369.909 670.091 352 648 352H376C353.909 352 336 369.909 336 392V472Z" fill="#111111"/>
+    <path d="M336 419H592V352H336V419Z" fill="#111111"/>
+    <path d="M388 512H688V352H388V512Z" fill="#111111"/>
+    <rect x="632" y="696" width="56" height="56" fill="#2945FF"/>
+  </g>
 </svg>
