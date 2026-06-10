@@ -511,31 +511,42 @@ function Index() {
             </div>
 
             {/* RIGHT: PHONE MOCKUP */}
-            <div className="hidden lg:flex lg:col-span-5 justify-center lg:justify-start">
+            <div className="hidden lg:flex lg:col-span-5 items-center justify-end -mt-6">
               <div className="hero-console-wrapper opacity-0 relative select-none">
-                {/* Phone frame */}
+                {/* Ambient brand glow behind the device */}
+                <div style={{ position:"absolute", inset:-36, background:"radial-gradient(58% 48% at 52% 38%, rgba(43,58,255,0.20), rgba(232,255,0,0.05) 45%, transparent 72%)", filter:"blur(26px)", pointerEvents:"none" }} />
+
+                {/* Titanium outer rail */}
                 <div style={{
-                  width: 288, height: 586,
-                  background: "linear-gradient(175deg,#3a3a3c 0%,#252527 40%,#1c1c1e 100%)",
-                  borderRadius: 52, padding: 13,
-                  boxShadow: "0 0 0 1.5px rgba(255,255,255,0.10), 0 0 0 2.5px #111, 0 50px 100px rgba(0,0,0,0.55), inset 0 1.5px 0 rgba(255,255,255,0.12)"
+                  position:"relative",
+                  width: 280, height: 584,
+                  background: "linear-gradient(142deg,#85858b 0%,#3c3c3f 15%,#26262a 48%,#525258 78%,#161618 100%)",
+                  borderRadius: 52, padding: 3,
+                  boxShadow: "0 0 0 0.5px rgba(255,255,255,0.22), 0 1px 2px rgba(255,255,255,0.35), 0 60px 120px -28px rgba(0,0,0,0.62), 0 34px 64px -34px rgba(43,58,255,0.30), inset 0 0 3px rgba(255,255,255,0.5)",
                 }}>
-                  {/* Physical buttons */}
-                  <div style={{ position:"absolute", right:-4, top:108, width:4, height:52, background:"linear-gradient(180deg,#48484a,#2c2c2e)", borderRadius:"0 4px 4px 0", boxShadow:"inset -1px 0 0 rgba(255,255,255,0.06)" }} />
-                  <div style={{ position:"absolute", left:-4, top:90, width:4, height:34, background:"linear-gradient(180deg,#48484a,#2c2c2e)", borderRadius:"4px 0 0 4px", boxShadow:"inset 1px 0 0 rgba(255,255,255,0.06)" }} />
-                  <div style={{ position:"absolute", left:-4, top:134, width:4, height:34, background:"linear-gradient(180deg,#48484a,#2c2c2e)", borderRadius:"4px 0 0 4px", boxShadow:"inset 1px 0 0 rgba(255,255,255,0.06)" }} />
-                  <div style={{ position:"absolute", left:-4, top:188, width:4, height:34, background:"linear-gradient(180deg,#48484a,#2c2c2e)", borderRadius:"4px 0 0 4px", boxShadow:"inset 1px 0 0 rgba(255,255,255,0.06)" }} />
+                  {/* Titanium side buttons */}
+                  <div style={{ position:"absolute", right:-3, top:150, width:3, height:66, background:"linear-gradient(180deg,#6a6a70,#2a2a2c)", borderRadius:"0 3px 3px 0", boxShadow:"inset -1px 0 0 rgba(255,255,255,0.22), 1px 0 2px rgba(0,0,0,0.35)" }} />
+                  <div style={{ position:"absolute", left:-3, top:122, width:3, height:26, background:"linear-gradient(180deg,#6a6a70,#2a2a2c)", borderRadius:"3px 0 0 3px", boxShadow:"inset 1px 0 0 rgba(255,255,255,0.22)" }} />
+                  <div style={{ position:"absolute", left:-3, top:162, width:3, height:46, background:"linear-gradient(180deg,#6a6a70,#2a2a2c)", borderRadius:"3px 0 0 3px", boxShadow:"inset 1px 0 0 rgba(255,255,255,0.22)" }} />
+                  <div style={{ position:"absolute", left:-3, top:220, width:3, height:46, background:"linear-gradient(180deg,#6a6a70,#2a2a2c)", borderRadius:"3px 0 0 3px", boxShadow:"inset 1px 0 0 rgba(255,255,255,0.22)" }} />
+
+                  {/* Black bezel */}
+                  <div style={{ width:"100%", height:"100%", background:"#050506", borderRadius: 49, padding: 7, boxShadow:"inset 0 0 0 0.5px rgba(255,255,255,0.06), inset 0 0 8px rgba(0,0,0,0.9)" }}>
 
                   {/* Screen */}
-                  <div style={{ width:"100%", height:"100%", background:"#F2ECDE", borderRadius:40, overflow:"hidden", display:"flex", flexDirection:"column", position:"relative" }}>
+                  <div style={{ width:"100%", height:"100%", background:"var(--color-bone)", borderRadius: 42, overflow:"hidden", display:"flex", flexDirection:"column", position:"relative" }}>
+                    {/* Dynamic Island */}
+                    <div style={{ position:"absolute", top:10, left:"50%", transform:"translateX(-50%)", width:84, height:25, background:"#000", borderRadius:13, zIndex:30, boxShadow:"inset 0 0 0 0.5px rgba(255,255,255,0.04)" }}>
+                      <div style={{ position:"absolute", right:9, top:"50%", transform:"translateY(-50%)", width:6.5, height:6.5, borderRadius:"50%", background:"radial-gradient(circle at 35% 30%, #28324a, #000 70%)", boxShadow:"0 0 2px rgba(80,120,255,0.5)" }} />
+                    </div>
+                    {/* Diagonal screen reflection */}
+                    <div style={{ position:"absolute", inset:0, background:"linear-gradient(125deg, rgba(255,255,255,0.20) 0%, rgba(255,255,255,0.05) 16%, transparent 40%)", pointerEvents:"none", zIndex:24 }} />
                     {/* Screen edge gloss */}
-                    <div style={{ position:"absolute", top:0, left:0, right:0, height:80, background:"linear-gradient(180deg,rgba(255,255,255,0.14) 0%,transparent 100%)", borderRadius:"40px 40px 0 0", pointerEvents:"none", zIndex:10 }} />
+                    <div style={{ position:"absolute", top:0, left:0, right:0, height:80, background:"linear-gradient(180deg,rgba(255,255,255,0.12) 0%,transparent 100%)", borderRadius:"42px 42px 0 0", pointerEvents:"none", zIndex:10 }} />
 
-                    {/* Status bar */}
-                    <div style={{ padding:"14px 18px 0", display:"flex", justifyContent:"space-between", alignItems:"center", flexShrink:0, position:"relative" }}>
+                    {/* Status bar — no notch, slim top strip */}
+                    <div style={{ padding:"10px 16px 0", display:"flex", justifyContent:"space-between", alignItems:"center", flexShrink:0, position:"relative" }}>
                       <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:11, fontWeight:800, color:"#111111" }}>9:41</span>
-                      {/* Dynamic Island */}
-                      <div style={{ position:"absolute", left:"50%", top:10, transform:"translateX(-50%)", width:100, height:28, background:"#111111", borderRadius:22, zIndex:2 }} />
                       <div style={{ display:"flex", alignItems:"center", gap:5 }}>
                         {/* Signal */}
                         <div style={{ display:"flex", gap:2, alignItems:"flex-end", height:10 }}>
@@ -558,69 +569,146 @@ function Index() {
                     </div>
 
                     {/* App content */}
-                    <div style={{ flex:1, padding:"10px 16px 16px", display:"flex", flexDirection:"column", gap:8, minHeight:0, overflowY:"hidden" }}>
-                      <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:7.5, color:"rgba(17,17,17,0.32)", textTransform:"uppercase", letterSpacing:"0.18em" }}>
-                        tappd in · calorie calibration
-                      </span>
+                    <div style={{ flex:1, display:"flex", flexDirection:"column", minHeight:0, overflowY:"hidden", position:"relative" }}>
 
-                      {/* What other apps give you */}
-                      <div>
-                        <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:8.5, color:"rgba(17,17,17,0.38)", marginBottom:4 }}>other apps give you</div>
-                        <div style={{ position:"relative", display:"inline-flex", alignItems:"center", gap:6 }}>
-                          <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:22, fontWeight:700, color:"rgba(17,17,17,0.25)", lineHeight:1 }}>2,400 kcal</span>
-                          <div style={{ position:"absolute", top:"50%", left:0, right:0, height:2.5, background:"#FF3B2F", transform:"translateY(-50%)", borderRadius:2 }} />
-                          <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:7.5, color:"#FF3B2F", fontWeight:700, marginLeft:2 }}>wrong</span>
+                      {/* App header */}
+                      <div style={{ padding:"8px 14px 6px", display:"flex", justifyContent:"space-between", alignItems:"center", borderBottom:"1px solid rgba(17,17,17,0.07)" }}>
+                        <div>
+                          <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:7, color:"rgba(17,17,17,0.35)", textTransform:"uppercase", letterSpacing:"0.16em", marginBottom:1 }}>good morning</div>
+                          <div style={{ fontFamily:"'Bricolage Grotesque',sans-serif", fontSize:12, fontWeight:800, color:"#111", letterSpacing:"-0.02em", lineHeight:1 }}>today's targets</div>
+                        </div>
+                        <div style={{ display:"flex", alignItems:"center", gap:4, background:"#111", borderRadius:7, padding:"3px 8px" }}>
+                          <span style={{ width:4, height:4, borderRadius:"50%", background:"#E8FF00", boxShadow:"0 0 4px #E8FF00" }} />
+                          <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:7, fontWeight:800, color:"var(--color-bone)", textTransform:"uppercase", letterSpacing:"0.12em" }}>on track</span>
                         </div>
                       </div>
 
-                      {/* The actual number */}
-                      <div style={{ background:"#E8FF00", border:"2.5px solid #111", borderRadius:14, padding:"11px 15px", boxShadow:"4px 4px 0 #111" }}>
-                        <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:7.5, color:"rgba(17,17,17,0.5)", textTransform:"uppercase", letterSpacing:"0.14em", marginBottom:5 }}>
-                          your real maintenance
-                        </div>
-                        <div style={{ display:"flex", alignItems:"baseline", gap:5 }}>
-                          <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:42, fontWeight:900, color:"#111111", lineHeight:1, letterSpacing:"-0.03em" }}>2,050</span>
-                          <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:14, fontWeight:700, color:"rgba(17,17,17,0.45)" }}>kcal</span>
-                        </div>
-                        <div style={{ display:"flex", justifyContent:"space-between", marginTop:4, paddingTop:4, borderTop:"1px solid rgba(17,17,17,0.12)" }}>
-                          <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:7.5, color:"rgba(17,17,17,0.4)" }}>NEAT scored</span>
-                          <div style={{ display:"flex", alignItems:"center", gap:4 }}>
-                            <div style={{ background:"rgba(0,194,168,0.18)", border:"1px solid rgba(0,194,168,0.4)", borderRadius:3, padding:"1px 5px" }}>
-                              <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:6.5, fontWeight:700, color:"#00C2A8", textTransform:"uppercase" }}>why?</span>
+                      {/* Main scroll area */}
+                      <div style={{ flex:1, padding:"10px 14px 70px", display:"flex", flexDirection:"column", gap:7, minHeight:0, overflowY:"hidden" }}>
+
+                        {/* Calorie calibration card — deep navy */}
+                        <div style={{ background:"var(--color-navy)", border:"2px solid #111", borderRadius:12, padding:"10px 12px", boxShadow:"3px 3px 0 #111" }}>
+                          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:2 }}>
+                            <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:7, color:"rgba(227,211,169,0.45)", textTransform:"uppercase", letterSpacing:"0.14em" }}>your real maintenance</div>
+                            <div style={{ background:"rgba(0,194,168,0.2)", border:"1px solid rgba(0,194,168,0.5)", borderRadius:3, padding:"1px 5px", fontFamily:"'Geist Mono',monospace", fontSize:6, fontWeight:700, color:"#00C2A8", textTransform:"uppercase" }}>why?</div>
+                          </div>
+                          <div style={{ display:"flex", alignItems:"baseline", gap:4 }}>
+                            <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:36, fontWeight:900, color:"var(--color-bone)", lineHeight:1, letterSpacing:"-0.04em" }}>2,050</span>
+                            <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:12, fontWeight:700, color:"rgba(227,211,169,0.4)" }}>kcal</span>
+                            <div style={{ marginLeft:"auto", display:"flex", flexDirection:"column", alignItems:"flex-end" }}>
+                              <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:7, color:"rgba(227,211,169,0.3)", textDecoration:"line-through" }}>2,400 kcal</span>
+                              <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:6.5, color:"#FF6B6B", fontWeight:700 }}>generic guess</span>
                             </div>
                           </div>
+                          <div style={{ display:"flex", gap:4, marginTop:6, paddingTop:6, borderTop:"1px solid rgba(227,211,169,0.1)" }}>
+                            {[{k:"steps",v:"4,200"},{k:"job",v:"desk"},{k:"NEAT",v:"low"}].map(r => (
+                              <div key={r.k} style={{ flex:1, background:"rgba(227,211,169,0.07)", borderRadius:5, padding:"3px 0", textAlign:"center" }}>
+                                <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:8.5, fontWeight:800, color:"var(--color-bone)" }}>{r.v}</div>
+                                <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:6, color:"rgba(227,211,169,0.3)", textTransform:"uppercase", letterSpacing:"0.06em" }}>{r.k}</div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
+
+                        {/* Macro row */}
+                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:5 }}>
+                          {[
+                            { label:"protein", val:"160g", pct:78, color:"#2B3AFF" },
+                            { label:"carbs",   val:"220g", pct:64, color:"#FF7A1A" },
+                            { label:"fat",     val:"65g",  pct:90, color:"#FF2B85" },
+                          ].map(m => (
+                            <div key={m.label} style={{ background:"rgba(17,17,17,0.05)", border:"1.5px solid rgba(17,17,17,0.09)", borderRadius:9, padding:"7px 6px" }}>
+                              <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:13, fontWeight:900, color:m.color, lineHeight:1.1 }}>{m.val}</div>
+                              <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:6, color:"rgba(17,17,17,0.35)", textTransform:"uppercase", letterSpacing:"0.07em", marginTop:2, marginBottom:4 }}>{m.label}</div>
+                              <div style={{ height:3, background:"rgba(17,17,17,0.08)", borderRadius:2, overflow:"hidden" }}>
+                                <div style={{ width:`${m.pct}%`, height:"100%", background:m.color, borderRadius:2 }} />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Today's rings — 4-ring streak hero */}
+                        <div style={{ background:"var(--color-navy)", border:"2px solid #111", borderRadius:12, padding:"11px 13px", boxShadow:"3px 3px 0 #111", display:"flex", alignItems:"center", gap:13 }}>
+                          {/* four concentric rings + streak count */}
+                          <div style={{ position:"relative", width:62, height:62, flexShrink:0 }}>
+                            <svg viewBox="0 0 62 62" style={{ width:"100%", height:"100%", transform:"rotate(-90deg)" }}>
+                              {[{r:28,c:"#FF7A1A"},{r:21,c:"#2B3AFF"},{r:14,c:"#7C3AED"},{r:7,c:"#FF2B85"}].map((ring,i) => {
+                                const C = 2*Math.PI*ring.r;
+                                return (
+                                  <g key={i}>
+                                    <circle cx="31" cy="31" r={ring.r} fill="none" stroke="rgba(227,211,169,0.09)" strokeWidth="5" />
+                                    <circle cx="31" cy="31" r={ring.r} fill="none" stroke={ring.c} strokeWidth="5" strokeLinecap="butt" strokeDasharray={C} strokeDashoffset={0} />
+                                  </g>
+                                );
+                              })}
+                            </svg>
+                            <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
+                              <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:15, fontWeight:900, color:"var(--color-bone)", lineHeight:1, letterSpacing:"-0.03em" }}>12</span>
+                              <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:5, color:"rgba(227,211,169,0.5)", textTransform:"uppercase", letterSpacing:"0.12em", marginTop:1 }}>days</span>
+                            </div>
+                          </div>
+                          {/* breakdown */}
+                          <div style={{ flex:1 }}>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
+                              <span style={{ fontFamily:"'Bricolage Grotesque',sans-serif", fontSize:9.5, fontWeight:800, color:"rgba(227,211,169,0.92)", letterSpacing:"-0.01em" }}>today's rings</span>
+                              <span style={{ background:"#E8FF00", color:"#111", fontFamily:"'Geist Mono',monospace", fontSize:5.5, fontWeight:900, padding:"1.5px 5px", borderRadius:999, textTransform:"uppercase", letterSpacing:"0.06em" }}>4/4 closed</span>
+                            </div>
+                            {[
+                              { n:"nutrition", c:"#FF7A1A" },
+                              { n:"hydration", c:"#2B3AFF" },
+                              { n:"sleep",     c:"#7C3AED" },
+                              { n:"training",  c:"#FF2B85" },
+                            ].map(r => (
+                              <div key={r.n} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:2.5 }}>
+                                <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+                                  <div style={{ width:5, height:5, borderRadius:"50%", background:r.c, flexShrink:0 }} />
+                                  <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:7, color:"rgba(227,211,169,0.5)", textTransform:"uppercase", letterSpacing:"0.05em" }}>{r.n}</span>
+                                </div>
+                                <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:8, color:"#00C2A8", fontWeight:900 }}>✓</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
                       </div>
 
-                      {/* Macro row */}
-                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:5 }}>
+                      {/* Floating brutalist pill dock */}
+                      <div style={{
+                        position:"absolute", bottom:10, left:"50%", transform:"translateX(-50%)",
+                        background:"var(--color-card-light)", border:"2px solid #111", borderRadius:999,
+                        boxShadow:"3px 3px 0 #111",
+                        padding:"4px 6px",
+                        display:"flex", alignItems:"center", gap:1,
+                        zIndex:20, whiteSpace:"nowrap",
+                      }}>
                         {[
-                          { label:"protein", val:"160g", color:"#2B3AFF" },
-                          { label:"carbs",   val:"220g", color:"#FF7A1A" },
-                          { label:"fat",     val:"65g",  color:"#FF2B85" },
-                        ].map(m => (
-                          <div key={m.label} style={{ background:"rgba(17,17,17,0.05)", border:"1.5px solid rgba(17,17,17,0.1)", borderRadius:9, padding:"7px 4px", textAlign:"center" }}>
-                            <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:14, fontWeight:900, color:m.color, lineHeight:1.1 }}>{m.val}</div>
-                            <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:6.5, color:"rgba(17,17,17,0.35)", textTransform:"uppercase", letterSpacing:"0.07em", marginTop:2 }}>{m.label}</div>
+                          { label:"nutrition", active:true  },
+                          { label:"training",  active:false },
+                          { label:"sleep",     active:false },
+                          { label:"hydration", active:false },
+                          { label:"coach",     active:false },
+                        ].map((tab, i) => (
+                          <div key={tab.label} style={{
+                            display:"flex", alignItems:"center", justifyContent:"center",
+                            background: tab.active ? "#111" : "transparent",
+                            borderRadius:999,
+                            padding: tab.active ? "2.5px 6px" : "2.5px 4px",
+                            transition:"all 0.2s",
+                          }}>
+                            <span style={{
+                              fontFamily:"'Geist Mono',monospace",
+                              fontSize:5.8,
+                              fontWeight: tab.active ? 800 : 500,
+                              color: tab.active ? "var(--color-bone)" : "rgba(17,17,17,0.38)",
+                              textTransform:"uppercase",
+                              letterSpacing:"0.03em",
+                            }}>{tab.label}</span>
                           </div>
                         ))}
                       </div>
 
-                      {/* NEAT inputs */}
-                      <div style={{ background:"rgba(17,17,17,0.04)", border:"1.5px solid rgba(17,17,17,0.08)", borderRadius:11, padding:"9px 12px" }}>
-                        <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:7, color:"rgba(17,17,17,0.28)", textTransform:"uppercase", letterSpacing:"0.15em", marginBottom:7 }}>your real inputs</div>
-                        {[
-                          { k:"daily steps", v:"4,200" },
-                          { k:"job type",    v:"desk job" },
-                          { k:"sitting hrs", v:"9 hrs/day" },
-                        ].map((row, i) => (
-                          <div key={row.k} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingBottom: i < 2 ? 5 : 0, borderBottom: i < 2 ? "1px solid rgba(17,17,17,0.06)" : "none", marginBottom: i < 2 ? 5 : 0 }}>
-                            <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:8.5, color:"rgba(17,17,17,0.38)" }}>{row.k}</span>
-                            <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:8.5, fontWeight:700, color:"rgba(17,17,17,0.7)" }}>{row.v}</span>
-                          </div>
-                        ))}
-                      </div>
                     </div>
+                  </div>
                   </div>
                 </div>
               </div>
@@ -738,40 +826,22 @@ function Index() {
             <div className="w-full max-w-[580px] h-[430px] sm:h-[440px] md:h-[520px] select-none" style={{ perspective: "1200px" }}>
               <div className="sol-card-inner relative w-full h-full" style={{ transformStyle: "preserve-3d" }}>
                 
-                {/* CARD FRONT: pricing and branding */}
+                {/* CARD FRONT: pricing — the payoff after showing the $400+/yr problem */}
                 <div 
                   className="absolute inset-0 w-full h-full bg-card-light border-[3px] border-ink rounded-[14px] p-4 sm:p-5 md:p-8 shadow-v5 flex flex-col justify-between"
                   style={{ backfaceVisibility: "hidden" }}
                 >
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-3">
-                      <Logo size={48} dotColor="#E8FF00" iconColor="#111111" />
-                      <div className="flex flex-col">
-                        <span className="font-display font-black text-2xl tracking-tighter lowercase leading-none">tappd in</span>
-                        <span className="font-mono text-[10px] text-muted-fg-light uppercase tracking-wider">[fitness context engine]</span>
-                      </div>
-                    </div>
-                    <div className="bg-card-light text-ink border-[2px] border-ink px-3 py-1 rounded-full text-xs font-mono font-semibold shadow-v5-sm">
-                      beta access open
-                    </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="font-mono text-[9px] font-bold text-pink uppercase tracking-[0.18em]">// simple, honest pricing</span>
+                    <h3 className="font-display font-black text-2xl sm:text-3xl tracking-tighter text-ink lowercase leading-tight">
+                      one sub.<br />all features.
+                    </h3>
                   </div>
 
-                  <div className="my-auto flex flex-col gap-4 sm:gap-6">
-                    <div className="text-center font-mono">
-                      <span className="text-[11px] font-bold text-pink block uppercase tracking-wider mb-1">
-                        // simple, honest pricing
-                      </span>
-                      <h3 className="text-xl sm:text-3xl font-display font-black text-ink lowercase tracking-tight">
-                        one sub. all features.
-                      </h3>
-                    </div>
-
+                  <div className="my-auto flex flex-col gap-3 sm:gap-4 py-2">
                     <div className="grid grid-cols-2 gap-3">
-                      {/* Monthly sub card */}
-                      <div className="border-[2px] border-ink bg-bone rounded-[10px] p-3 sm:p-5 shadow-v5-sm flex flex-col justify-between min-h-[115px] sm:min-h-[140px] relative overflow-hidden">
-                        <div className="absolute right-[-24px] top-[12px] rotate-[35deg] bg-pink text-bone text-[8px] font-mono font-bold py-1 px-8 border-b-2 border-ink">
-                          beta rate
-                        </div>
+                      {/* Monthly */}
+                      <div className="border-[2px] border-ink bg-bone rounded-[10px] p-3 sm:p-5 shadow-v5-sm flex flex-col justify-between min-h-[120px] sm:min-h-[145px]">
                         <span className="font-mono text-[10px] sm:text-xs font-bold text-muted-fg-light">monthly plan</span>
                         <div className="mt-1 sm:mt-2 flex flex-col">
                           <span className="text-[11px] sm:text-sm font-mono text-ink/40 line-through">$10/mo</span>
@@ -780,8 +850,8 @@ function Index() {
                         <span className="font-mono text-[8px] sm:text-[9px] text-muted-fg-light mt-1 sm:mt-3 block">cancel anytime. no commitment.</span>
                       </div>
 
-                      {/* Yearly sub card */}
-                      <div className="border-[2px] border-ink bg-volt/15 rounded-[10px] p-3 sm:p-5 shadow-v5-sm flex flex-col justify-between min-h-[115px] sm:min-h-[140px] relative overflow-hidden">
+                      {/* Yearly */}
+                      <div className="border-[2px] border-ink bg-volt/15 rounded-[10px] p-3 sm:p-5 shadow-v5-sm flex flex-col justify-between min-h-[120px] sm:min-h-[145px] relative overflow-hidden">
                         <div className="absolute right-[-24px] top-[12px] rotate-[35deg] bg-electric-dark text-bone text-[8px] font-mono font-bold py-1 px-8 border-b-2 border-ink">
                           save 20%
                         </div>
@@ -793,10 +863,19 @@ function Index() {
                         <span className="font-mono text-[8px] sm:text-[9px] text-muted-fg-light mt-1 sm:mt-3 block">billed annually. best value.</span>
                       </div>
                     </div>
+
+                    {/* vs. the fragmented stack */}
+                    <div className="flex items-center justify-between bg-alert-light/8 border border-alert-light/20 rounded-[8px] px-3 py-2">
+                      <span className="font-mono text-[9px] text-ink/50">vs. 7 separate apps</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[9px] text-ink/35 line-through">$401.94/yr</span>
+                        <span className="font-mono text-[9px] font-black text-teal">you save $354+</span>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="border-t border-ink/10 pt-3 font-mono text-[9px] sm:text-[10px] text-muted-fg-light">
-                    <span>waitlist price is locked at signup. no credit card needed.</span>
+                    <span>waitlist price locked at signup. no credit card needed.</span>
                   </div>
                 </div>
 
@@ -805,60 +884,30 @@ function Index() {
                   className="absolute inset-0 w-full h-full bg-navy text-bone border-[3px] border-ink rounded-[14px] p-4 sm:p-5 md:p-8 shadow-v5 flex flex-col justify-between"
                   style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
                 >
-                  <div className="flex justify-between items-start border-b border-bone/10 pb-3">
-                    <div className="flex items-center gap-3">
-                      <Logo size={40} dotColor="#E8FF00" iconColor="#F2ECDE" />
-                      <span className="font-display font-black text-xl tracking-tighter text-bone lowercase">what you get</span>
-                    </div>
-                    <div className="bg-electric text-bone border-[2px] border-bone px-3 py-1 rounded-full text-xs font-mono font-semibold">
-                      all-in-one features
+                  <div className="flex justify-between items-center border-b border-bone/10 pb-3">
+                    <span className="font-display font-black text-xl tracking-tighter text-bone lowercase">what you get</span>
+                    <div className="bg-volt/15 text-volt border border-volt/30 px-3 py-1 rounded-full text-[10px] font-mono font-bold tracking-wide">
+                      all-in-one
                     </div>
                   </div>
 
-                  <div className="my-auto flex flex-col gap-2.5 sm:gap-4 py-2 sm:py-4">
-                    {/* Feature 1 */}
-                    <div className="sol-feature-item flex items-start gap-2.5 opacity-0">
-                      <span className="font-mono text-volt text-xs sm:text-sm font-bold">[01]</span>
-                      <div className="flex flex-col">
-                        <span className="font-sans font-bold text-xs sm:text-sm text-bone">track your food, four ways</span>
-                        <span className="font-sans text-[10px] sm:text-xs text-muted-fg-dark leading-normal">
-                          snap a photo, scan a barcode, search it, or just tell the coach what you ate.
-                        </span>
+                  <div className="my-auto flex flex-col gap-2 sm:gap-3 py-2 sm:py-3">
+                    {[
+                      { n: "01", title: "nutrition tracking",       body: "snap, scan, search, or chat. four ways to log. oil always counted." },
+                      { n: "02", title: "workout generator + logger", body: "science-based plan for your week. log every set inside it." },
+                      { n: "03", title: "sleep & recovery",          body: "sync from apple health, oura, whoop, or log by hand. scored nightly." },
+                      { n: "04", title: "hydration + electrolytes",  body: "tap to log water. sodium, potassium, magnesium tracked against your targets." },
+                      { n: "05", title: "streak rings",              body: "four rings - nutrition, training, sleep, hydration. all four or the streak breaks." },
+                      { n: "06", title: "ai coach with citations",   body: "every answer cites a real study. ask mid-workout, get an answer back by voice." },
+                    ].map((f) => (
+                      <div key={f.n} className="sol-feature-item flex items-start gap-2.5">
+                        <span className="font-mono text-volt text-[10px] sm:text-xs font-bold flex-shrink-0">[{f.n}]</span>
+                        <div className="flex flex-col">
+                          <span className="font-sans font-bold text-[11px] sm:text-xs text-bone">{f.title}</span>
+                          <span className="font-sans text-[9px] sm:text-[10px] text-muted-fg-dark leading-normal">{f.body}</span>
+                        </div>
                       </div>
-                    </div>
-
-                    {/* Feature 2 */}
-                    <div className="sol-feature-item flex items-start gap-2.5 opacity-0">
-                      <span className="font-mono text-volt text-xs sm:text-sm font-bold">[02]</span>
-                      <div className="flex flex-col">
-                        <span className="font-sans font-bold text-xs sm:text-sm text-bone">build and log your workouts</span>
-                        <span className="font-sans text-[10px] sm:text-xs text-muted-fg-dark leading-normal">
-                          get a science-based plan made for your week, then log every set right inside it.
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Feature 3 */}
-                    <div className="sol-feature-item flex items-start gap-2.5 opacity-0">
-                      <span className="font-mono text-volt text-xs sm:text-sm font-bold">[03]</span>
-                      <div className="flex flex-col">
-                        <span className="font-sans font-bold text-xs sm:text-sm text-bone">a coach that knows the science</span>
-                        <span className="font-sans text-[10px] sm:text-xs text-muted-fg-dark leading-normal">
-                          ask anything. every answer is backed by a real study. bring a claim from instagram and it tells you if it holds up.
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Feature 4 */}
-                    <div className="sol-feature-item flex items-start gap-2.5 opacity-0">
-                      <span className="font-mono text-volt text-xs sm:text-sm font-bold">[04]</span>
-                      <div className="flex flex-col">
-                        <span className="font-sans font-bold text-xs sm:text-sm text-bone">a calorie target that is actually yours</span>
-                        <span className="font-sans text-[10px] sm:text-xs text-muted-fg-dark leading-normal">
-                          we score how much you really move each day, so your number is not a generic guess.
-                        </span>
-                      </div>
-                    </div>
+                    ))}
                   </div>
 
                   <div className="flex justify-between items-center border-t border-bone/10 pt-3 font-mono text-[9px] sm:text-[10px] text-muted-fg-dark">
@@ -990,7 +1039,7 @@ function Index() {
               </div>
 
               {/* Dual-phase container: photo and ingredients occupy the same space */}
-              <div className="relative border-[2px] border-ink/20 rounded-[10px] aspect-square overflow-hidden mb-4">
+              <div className="relative border-[2px] border-ink/20 rounded-[10px] aspect-video sm:aspect-square overflow-hidden mb-4">
 
                 {/* PHASE 1 — food photo + scanning beam */}
                 <div className="f2-photo-phase absolute inset-0">
@@ -1337,7 +1386,7 @@ function Index() {
                 <span className="hydr-total font-mono font-black text-4xl md:text-5xl text-ink leading-none tracking-tight">1.8L</span>
                 <span className="font-mono text-sm text-ink/40 mb-1">/ 2.5L goal</span>
               </div>
-              {/* glasses - SVG-based for real glass shape */}
+              {/* glasses - SVG-based for real glass shape, light blue water fill */}
               <div className="grid grid-cols-8 gap-1.5 mb-3">
                 {Array.from({ length: 8 }).map((_, i) => (
                   <div key={i} className="hydr-glass opacity-0 flex flex-col items-center">
@@ -1345,12 +1394,12 @@ function Index() {
                       {/* glass outline */}
                       <path
                         d="M4 4 L28 4 L24 44 Q24 46 20 46 L12 46 Q8 46 8 44 Z"
-                        fill={i < 6 ? "rgba(232,255,0,0.12)" : "rgba(17,17,17,0.04)"}
+                        fill={i < 6 ? "rgba(147,210,255,0.18)" : "rgba(17,17,17,0.04)"}
                         stroke="#111111"
                         strokeWidth="2"
                         strokeLinejoin="round"
                       />
-                      {/* water fill */}
+                      {/* water fill - light blue */}
                       {i < 6 && (
                         <clipPath id={`glass-clip-${i}`}>
                           <path d="M4.5 4.5 L27.5 4.5 L23.7 43.5 Q23.7 45.2 20 45.2 L12 45.2 Q8.3 45.2 8.3 43.5 Z" />
@@ -1359,13 +1408,13 @@ function Index() {
                       {i < 6 && (
                         <rect
                           x="0" y="4" width="32" height="42"
-                          fill="#E8FF00"
-                          fillOpacity="0.75"
+                          fill="#7DD3FC"
+                          fillOpacity="0.85"
                           clipPath={`url(#glass-clip-${i})`}
                         />
                       )}
                       {/* rim highlight */}
-                      <line x1="5" y1="7" x2="27" y2="7" stroke="rgba(255,255,255,0.35)" strokeWidth="1" strokeLinecap="round" />
+                      <line x1="5" y1="7" x2="27" y2="7" stroke="rgba(255,255,255,0.5)" strokeWidth="1" strokeLinecap="round" />
                       {/* + on unfilled glass */}
                       {i === 6 && (
                         <text x="16" y="29" textAnchor="middle" fontFamily="'Geist Mono',monospace" fontSize="14" fontWeight="900" fill="rgba(17,17,17,0.3)">+</text>
@@ -1534,33 +1583,33 @@ function Index() {
           {/* RIGHT: rings card */}
           <div className="lg:col-span-7 streak-card-col opacity-0">
             <div className="bg-navy text-bone border-[3px] border-ink rounded-[14px] p-5 md:p-8 shadow-v5-lg flex flex-col sm:flex-row items-center gap-6 md:gap-8">
-              {/* rings */}
-              <div className="relative w-[200px] h-[200px] sm:w-[220px] sm:h-[220px] flex-shrink-0">
-                <svg viewBox="0 0 200 200" className="w-full h-full -rotate-90">
+              {/* rings — larger SVG with wider gaps between rings so center text never overlaps */}
+              <div className="relative w-[220px] h-[220px] sm:w-[260px] sm:h-[260px] flex-shrink-0">
+                <svg viewBox="0 0 260 260" className="w-full h-full -rotate-90">
                   {[
-                    { r: 90, c: "var(--color-orange)" },
-                    { r: 68, c: "var(--color-electric-light)" },
-                    { r: 46, c: "var(--color-violet)" },
-                    { r: 24, c: "var(--color-pink)" },
+                    { r: 118, c: "var(--color-orange)" },
+                    { r: 92,  c: "var(--color-electric-light)" },
+                    { r: 66,  c: "var(--color-violet)" },
+                    { r: 40,  c: "var(--color-pink)" },
                   ].map((ring, i) => {
                     const C = 2 * Math.PI * ring.r;
                     return (
                       <g key={i}>
-                        <circle cx="100" cy="100" r={ring.r} fill="none" stroke="rgba(231,218,187,0.10)" strokeWidth="15" />
+                        <circle cx="130" cy="130" r={ring.r} fill="none" stroke="rgba(227,211,169,0.10)" strokeWidth="16" />
                         <circle
                           className="streak-ring"
-                          cx="100" cy="100" r={ring.r}
-                          fill="none" stroke={ring.c} strokeWidth="15" strokeLinecap="butt"
+                          cx="130" cy="130" r={ring.r}
+                          fill="none" stroke={ring.c} strokeWidth="16" strokeLinecap="butt"
                           strokeDasharray={C} strokeDashoffset={C} data-c={C}
                         />
                       </g>
                     );
                   })}
                 </svg>
-                {/* center streak count */}
+                {/* center streak count — fits comfortably inside the innermost ring (r=40, ~80px diameter) */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="streak-count font-mono font-black text-4xl text-bone leading-none">12</span>
-                  <span className="font-mono text-[8px] text-bone/50 uppercase tracking-[0.2em] mt-1">day streak</span>
+                  <span className="streak-count font-mono font-black text-3xl text-bone leading-none">12</span>
+                  <span className="font-mono text-[7px] text-bone/50 uppercase tracking-[0.15em] mt-0.5">day streak</span>
                 </div>
               </div>
               {/* breakdown */}
