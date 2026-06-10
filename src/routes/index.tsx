@@ -9,6 +9,11 @@ import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, Observer, ScrollToPlugin);
+  // Mobile browsers fire a `resize` event every time the address bar slides in/out
+  // during scroll. Left unchecked, that makes ScrollTrigger recalculate (and visibly
+  // jump) on every scroll tick. ignoreMobileResize tells ScrollTrigger to ignore those
+  // height-only mobile resizes so scrolling stays smooth and reveals fire reliably.
+  ScrollTrigger.config({ ignoreMobileResize: true });
 }
 
 export const Route = createFileRoute("/")({
@@ -156,16 +161,7 @@ function Index() {
 
     window.scrollTo(0, 0);
 
-    // On mobile, scroll-locked pins feel janky and break layout. Below 768px we
-    // drop pin+scrub and just play each timeline once when the section scrolls in.
     const isDesktop = window.matchMedia("(min-width: 768px)").matches;
-    // scrub:0.4 makes the animation track the scroll tightly (snappy, not laggy).
-    // Shorter pin distances (set per-section below) mean each section resolves in
-    // a quick flick of the wheel, so nothing drags and attention never drifts.
-    const mkST = (trigger: string, end: string) =>
-      isDesktop
-        ? { trigger, start: "top top", end, pin: true, scrub: 1, anticipatePin: 1 }
-        : { trigger, start: "top 85%", once: true };
 
     const ctx = gsap.context(() => {
 
@@ -177,121 +173,167 @@ function Index() {
       .fromTo(".hero-form-wrapper",    { y: 18, opacity: 0  }, { y: 0, opacity: 1, duration: 0.45, ease: "power2.out" }, "-=0.3")
       .fromTo(".hero-console-wrapper", { x: 24, opacity: 0  }, { x: 0, opacity: 1, duration: 0.65, ease: "back.out(1.2)" }, "-=0.5");
 
-    // ── SCROLL-LOCKED PINNED ANIMATIONS ─────────────────────────────────────
-    // Each section pins to viewport top; animation scrubs with scroll.
-    // IMPORTANT: all animated elements keep their opacity-0 Tailwind class for SSR.
-    // We use fromTo() with explicit {opacity:1} TO states so GSAP doesn't read the
-    // Tailwind opacity-0 as the natural "TO" state (which would keep elements invisible).
-    // ScrollTrigger.refresh() at the end recalculates positions after all pins are set,
-    // accounting for the spacer each pin inserts for subsequent sections.
+    // ── SECTION TIMELINE FACTORY ─────────────────────────────────────────────
+    // Both desktop and mobile PIN the section to the top of the viewport and SCRUB
+    // the reveal to the scroll position: the section holds still, its content stays
+    // in its start (hidden) state until you arrive, and then builds in at exactly the
+    // pace you swipe/scroll — when the reveal is done the section releases and the next
+    // one scrolls up. Mobile uses a tighter scrub and a shorter pin distance so each
+    // section resolves in one deliberate swipe instead of a long drag.
+    // IMPORTANT: animated elements keep their opacity-0 Tailwind class for SSR; the
+    // fromTo() TO states (opacity:1) are what reveal them as the scrub advances.
+    const buildTL = (trigger: string, end: string) => {
+      // Mobile gets 65% of the desktop scroll distance — enough room to read
+      // the text before the visual, without needing a marathon of swipes.
+      const mobileEnd = end.replace(/\+=(\d+)/, (_, n) => `+=${Math.round(Number(n) * 0.65)}`);
+      return gsap.timeline({
+        scrollTrigger: {
+          trigger,
+          start: "top top",
+          end: isDesktop ? end : mobileEnd,
+          pin: true,
+          // Lazier scrub: the animation lags behind the scroll finger/wheel
+          // so users have time to see what's appearing rather than it flashing by.
+          scrub: isDesktop ? 1.8 : 0.7,
+          anticipatePin: 1,
+        },
+      });
+    };
 
     // ── COMP — market problem ─────────────────────────────────────────────────
-    gsap.timeline({
-      scrollTrigger: mkST("#sec-comp", "+=600")
-    })
-    .fromTo(".comp-card",        { opacity:0, scale:0.88, y:32 }, { opacity:1, scale:1, y:0, stagger:0.1 })
-    .fromTo(".price-strike-line",{ scaleX:0 },                    { scaleX:1, transformOrigin:"left center" }, "-=0.4");
+    // Cards stagger in slowly; strike-line is the payoff at the end.
+    buildTL("#sec-comp", "+=800")
+    .fromTo(".comp-card",        { opacity:0, scale:0.88, y:36 }, { opacity:1, scale:1, y:0, stagger:0.14, duration:0.6 })
+    .to({}, { duration: 0.3 })                                       // brief pause so user reads the cards
+    .fromTo(".price-strike-line",{ scaleX:0 },                    { scaleX:1, transformOrigin:"left center", duration:0.5 });
 
     // ── SOLUTION — evidence-based stack ──────────────────────────────────────
-    gsap.timeline({
-      scrollTrigger: mkST("#sec-solution", "+=900")
-    })
-    .fromTo(".sol-left-panel",   { opacity:0, x:-40 },        { opacity:1, x:0 })
-    .fromTo(".sol-card-wrapper", { opacity:0, scale:0.93 },   { opacity:1, scale:1 }, "-=0.4")
-    .to(".sol-card-inner",       { rotateY:180 },                               "+=0.2")
-    .fromTo(".sol-feature-item", { opacity:0, x:20 },         { opacity:1, x:0, stagger:0.18 }, "-=0.8");
+    // Left panel (text) enters first; card follows after a deliberate beat.
+    const solTl = buildTL("#sec-solution", "+=1100")
+      .fromTo(".sol-left-panel",   { opacity:0, x:-40 },        { opacity:1, x:0, duration:0.6 })
+      .to({}, { duration: 0.5 })                                     // user reads the pitch before the card arrives
+      .fromTo(".sol-card-wrapper", { opacity:0, scale:0.93 },   { opacity:1, scale:1, duration:0.7 }, "-=0.1");
+    solTl.to(".sol-card-inner", { rotateY:180, duration:0.6 }, "+=0.3");
+    solTl.fromTo(".sol-feature-item", { opacity:0, x:20 }, { opacity:1, x:0, stagger:0.22, duration:0.5 }, "-=0.6");
 
     // ── F1 — accurate maintenance ─────────────────────────────────────────────
+    // Title → subtitle → text col (all text-first); then card fades in with number animation.
     const kcalObj = { val: 2400 };
-    gsap.timeline({
-      scrollTrigger: mkST("#sec-f1", "+=800")
-    })
-    .fromTo(".f1-title",    { opacity:0, y:16 }, { opacity:1, y:0 })
-    .fromTo(".f1-subtitle", { opacity:0, y:16 }, { opacity:1, y:0 }, "-=0.3")
-    .fromTo(".f1-text-col", { opacity:0, x:-32 },{ opacity:1, x:0 }, "-=0.3")
-    .fromTo(".f1-card-col", { opacity:0, scale:0.93 }, { opacity:1, scale:1 }, "-=0.4")
-    .to("#f1-strike-line",  { scaleX:1, transformOrigin:"left center" }, "+=0.1")
-    .to(kcalObj, { val:2050, onUpdate:() => { const el=document.getElementById("f1-kcal-val"); if(el) el.innerText=Math.round(kcalObj.val).toLocaleString()+" kcal"; } }, "-=0.2")
-    .fromTo(".f1-tag", { opacity:0, y:10 }, { opacity:1, y:0, stagger:0.15 });
+    buildTL("#sec-f1", "+=1000")
+    .fromTo(".f1-title",    { opacity:0, y:18 }, { opacity:1, y:0, duration:0.5 })
+    .fromTo(".f1-subtitle", { opacity:0, y:18 }, { opacity:1, y:0, duration:0.5 }, "-=0.25")
+    .fromTo(".f1-text-col", { opacity:0, x:-32 },{ opacity:1, x:0, duration:0.6 }, "-=0.25")
+    .to({}, { duration: 0.5 })                                       // pause — read the copy
+    .fromTo(".f1-card-col", { opacity:0, scale:0.93 }, { opacity:1, scale:1, duration:0.7 })
+    .to("#f1-strike-line",  { scaleX:1, transformOrigin:"left center", duration:0.4 }, "+=0.15")
+    .to(kcalObj, { val:2050, duration:0.7, onUpdate:() => { const el=document.getElementById("f1-kcal-val"); if(el) el.innerText=Math.round(kcalObj.val).toLocaleString()+" kcal"; } }, "-=0.2")
+    .fromTo(".f1-tag", { opacity:0, y:10 }, { opacity:1, y:0, stagger:0.2, duration:0.4 });
 
     // ── F2 — AI photo scan ────────────────────────────────────────────────────
-    gsap.timeline({
-      scrollTrigger: mkST("#sec-f2", "+=700")
-    })
-    .fromTo(".f2-text-col",  { opacity:0, x:-32 },      { opacity:1, x:0 })
-    .fromTo(".f2-card-col",  { opacity:0, scale:0.94 }, { opacity:1, scale:1 }, "-=0.4")
-    .fromTo(".f2-scan-item", { opacity:0, x:-12 },      { opacity:1, x:0, stagger:0.18 }, "-=0.3")
-    .fromTo(".f2-oil-badge", { opacity:0, y:12 },       { opacity:1, y:0 }, "-=0.2");
+    // Text col first, hold for beam sweep, then reveal ingredients slowly.
+    buildTL("#sec-f2", "+=1200")
+    .fromTo(".f2-text-col",       { opacity:0, x:-32 },      { opacity:1, x:0,     duration:0.6 })
+    .to({}, { duration: 0.5 })                                       // user reads before card appears
+    .fromTo(".f2-card-col",       { opacity:0, scale:0.94 }, { opacity:1, scale:1, duration:0.6 }, "-=0.1")
+    .to({},                       { duration: isDesktop ? 1.2 : 0.7 })  // beam sweeps
+    .to(".f2-photo-phase",        { opacity:0, duration:0.5 })
+    .fromTo(".f2-ingr-phase",     { opacity:0 },              { opacity:1,          duration:0.5 }, "-=0.2")
+    .fromTo(".f2-ingr-item",      { opacity:0, x:-12 },       { opacity:1, x:0,     duration:0.4, stagger:0.14 }, "-=0.2")
+    .fromTo(".f2-results-footer", { opacity:0, y:6 },         { opacity:1, y:0,     duration:0.4 })
+    .fromTo(".f2-oil-badge",      { opacity:0, y:14 },        { opacity:1, y:0,     duration:0.5 });
 
     // ── F2B — four ways to log ────────────────────────────────────────────────
-    gsap.timeline({
-      scrollTrigger: mkST("#sec-f2b", "+=650")
-    })
-    .fromTo(".f2b-title",    { opacity:0, y:16 }, { opacity:1, y:0 })
-    .fromTo(".f2b-subtitle", { opacity:0, y:16 }, { opacity:1, y:0 }, "-=0.3")
-    .fromTo(".f2b-method",   { opacity:0, y:28, scale:0.95 }, { opacity:1, y:0, scale:1, stagger:0.18 }, "-=0.3");
+    buildTL("#sec-f2b", "+=850")
+    .fromTo(".f2b-title",    { opacity:0, y:18 }, { opacity:1, y:0, duration:0.5 })
+    .fromTo(".f2b-subtitle", { opacity:0, y:18 }, { opacity:1, y:0, duration:0.5 }, "-=0.25")
+    .to({}, { duration: 0.4 })
+    .fromTo(".f2b-method",   { opacity:0, y:30, scale:0.95 }, { opacity:1, y:0, scale:1, stagger:0.22, duration:0.55 });
 
     // ── F3 — workout generator ────────────────────────────────────────────────
-    gsap.timeline({
-      scrollTrigger: mkST("#sec-f3", "+=750")
-    })
-    .fromTo(".f3-text-col",   { opacity:0, x:-32 },       { opacity:1, x:0 })
-    .fromTo(".f3-card-col",   { opacity:0, scale:0.94 },  { opacity:1, scale:1 }, "-=0.4")
-    .fromTo(".f3-input-chip", { opacity:0, scale:0.8, y:10 }, { opacity:1, scale:1, y:0, stagger:0.12 }, "-=0.3")
-    .fromTo(".f3-day-chip",   { opacity:0, x:-12 },        { opacity:1, x:0, stagger:0.15 }, "-=0.2");
+    // Text first; chips stagger in after the card settles.
+    buildTL("#sec-f3", "+=1000")
+    .fromTo(".f3-text-col",   { opacity:0, x:-32 },       { opacity:1, x:0, duration:0.6 })
+    .to({}, { duration: 0.45 })
+    .fromTo(".f3-card-col",   { opacity:0, scale:0.94 },  { opacity:1, scale:1, duration:0.7 })
+    .fromTo(".f3-input-chip", { opacity:0, scale:0.8, y:10 }, { opacity:1, scale:1, y:0, stagger:0.16, duration:0.45 }, "-=0.3")
+    .fromTo(".f3-day-chip",   { opacity:0, x:-12 },        { opacity:1, x:0, stagger:0.2, duration:0.4 }, "-=0.2");
 
     // ── F3B — workout logger ──────────────────────────────────────────────────
-    gsap.timeline({
-      scrollTrigger: mkST("#sec-f3b", "+=700")
-    })
-    .fromTo(".f3b-card-col", { opacity:0, x:-32 },      { opacity:1, x:0 })
-    .fromTo(".f3b-text-col", { opacity:0, x:32 },       { opacity:1, x:0 }, "-=0.4")
-    .fromTo(".f3b-set-row",  { opacity:0, x:-16 },      { opacity:1, x:0, stagger:0.22 }, "-=0.3")
-    .fromTo(".f3b-pr-row",   { opacity:0, y:12 },       { opacity:1, y:0 }, "-=0.2")
-    .fromTo(".f3b-vol-bar",  { opacity:0, scaleX:0, transformOrigin:"left center" }, { opacity:1, scaleX:1, stagger:0.15 }, "-=0.2");
+    buildTL("#sec-f3b", "+=950")
+    .fromTo(".f3b-text-col", { opacity:0, x:32 },       { opacity:1, x:0, duration:0.6 })
+    .to({}, { duration: 0.4 })
+    .fromTo(".f3b-card-col", { opacity:0, x:-32 },      { opacity:1, x:0, duration:0.6 })
+    .fromTo(".f3b-set-row",  { opacity:0, x:-16 },      { opacity:1, x:0, stagger:0.26, duration:0.45 }, "-=0.3")
+    .fromTo(".f3b-pr-row",   { opacity:0, y:14 },       { opacity:1, y:0, duration:0.4 }, "-=0.2")
+    .fromTo(".f3b-vol-bar",  { opacity:0, scaleX:0, transformOrigin:"left center" }, { opacity:1, scaleX:1, stagger:0.2, duration:0.5 }, "-=0.2");
+
+    // ── SLEEP — recovery ──────────────────────────────────────────────────────
+    buildTL("#sec-sleep", "+=1000")
+    .fromTo(".sleep-text-col", { opacity:0, x:-32 },      { opacity:1, x:0, duration:0.6 })
+    .to({}, { duration: 0.5 })
+    .fromTo(".sleep-card-col", { opacity:0, scale:0.94 }, { opacity:1, scale:1, duration:0.7 })
+    .fromTo(".sleep-stat",     { opacity:0, y:16 },       { opacity:1, y:0, stagger:0.2, duration:0.45 }, "-=0.3")
+    .fromTo(".sleep-stage",    { scaleX:0, transformOrigin:"left center" }, { scaleX:1, stagger:0.14, duration:0.45 }, "-=0.1")
+    .fromTo(".sleep-source",   { opacity:0, y:10 },       { opacity:1, y:0, stagger:0.12, duration:0.4 }, "-=0.2");
+
+    // ── HYDRATION — beyond water ──────────────────────────────────────────────
+    buildTL("#sec-hydration", "+=1000")
+    .fromTo(".hydr-text-col",  { opacity:0, x:32 },       { opacity:1, x:0, duration:0.6 })
+    .to({}, { duration: 0.5 })
+    .fromTo(".hydr-card-col",  { opacity:0, scale:0.94 }, { opacity:1, scale:1, duration:0.7 })
+    .fromTo(".hydr-glass",     { opacity:0, scale:0.6, y:12 }, { opacity:1, scale:1, y:0, stagger:0.09, duration:0.45 }, "-=0.3")
+    .fromTo(".hydr-electro",   { opacity:0, y:14 },       { opacity:1, y:0, stagger:0.18, duration:0.45 }, "-=0.1");
 
     // ── F4 — AI coach ─────────────────────────────────────────────────────────
-    gsap.timeline({
-      scrollTrigger: mkST("#sec-f4", "+=700")
-    })
-    .fromTo(".f4-text-col",  { opacity:0, x:32 },        { opacity:1, x:0 })
-    .fromTo("#f4-coach-chat",{ opacity:0, y:20, scale:0.93 }, { opacity:1, y:0, scale:1 }, "-=0.4")
-    .fromTo(".f4-chat-bubble:nth-child(1)", { opacity:0, y:12 }, { opacity:1, y:0 }, "-=0.2")
-    .fromTo(".f4-chat-bubble:nth-child(2)", { opacity:0, y:16, scale:0.95 }, { opacity:1, y:0, scale:1 }, "-=0.1");
+    // Centered layout: text heading first, then chat card rises in, then bubbles.
+    buildTL("#sec-f4", "+=1150")
+    .fromTo(".f4-text-col",    { opacity:0, y:24 },         { opacity:1, y:0, duration:0.6 })
+    .to({}, { duration: 0.5 })
+    .fromTo("#f4-coach-chat",  { opacity:0, y:24, scale:0.93 }, { opacity:1, y:0, scale:1, duration:0.75 })
+    .fromTo(".f4-chat-bubble", { opacity:0, y:12 },          { opacity:1, y:0, duration:0.4, stagger:0.28 }, "-=0.2");
+
+    // ── STREAK — the four brutalist rings ─────────────────────────────────────
+    const streakObj = { val: 0 };
+    buildTL("#sec-streak", "+=1100")
+    .fromTo(".streak-text-col", { opacity:0, x:-32 },      { opacity:1, x:0, duration:0.6 })
+    .to({}, { duration: 0.5 })
+    .fromTo(".streak-card-col", { opacity:0, scale:0.94 }, { opacity:1, scale:1, duration:0.7 })
+    .fromTo(".streak-ring",     { strokeDashoffset:(_i: number, t: Element)=> Number((t as SVGCircleElement).getAttribute("data-c")) }, { strokeDashoffset:0, stagger:0.22, duration:0.85, ease:"power2.out" }, "-=0.3")
+    .to(streakObj, { val:12, duration:0.65, onUpdate:()=>{ const el=document.querySelector(".streak-count"); if(el) el.textContent=String(Math.round(streakObj.val)); } }, "-=0.6")
+    .fromTo(".streak-row",      { opacity:0, x:16 },       { opacity:1, x:0, stagger:0.18, duration:0.45 }, "-=0.4")
+    .fromTo(".streak-legend",   { opacity:0, y:10 },       { opacity:1, y:0, stagger:0.12, duration:0.4 }, "-=0.3");
 
     // ── WHY BUTTON — evidence card explainer ─────────────────────────────────
-    gsap.timeline({
-      scrollTrigger: mkST("#sec-why", "+=700")
-    })
-    .fromTo(".why-title",    { opacity:0, y:16 }, { opacity:1, y:0 })
-    .fromTo(".why-subtitle", { opacity:0, y:20 }, { opacity:1, y:0 }, "-=0.3")
-    .fromTo(".why-desc",     { opacity:0, y:16 }, { opacity:1, y:0, stagger:0.12 }, "-=0.3")
-    .fromTo(".why-card",     { opacity:0, x:36, scale:0.95 }, { opacity:1, x:0, scale:1 }, "-=0.5");
+    buildTL("#sec-why", "+=950")
+    .fromTo(".why-title",    { opacity:0, y:18 }, { opacity:1, y:0, duration:0.55 })
+    .fromTo(".why-subtitle", { opacity:0, y:22 }, { opacity:1, y:0, duration:0.55 }, "-=0.25")
+    .fromTo(".why-desc",     { opacity:0, y:18 }, { opacity:1, y:0, stagger:0.18, duration:0.5 }, "-=0.25")
+    .to({}, { duration: 0.4 })
+    .fromTo(".why-card",     { opacity:0, x:40, scale:0.95 }, { opacity:1, x:0, scale:1, duration:0.7 });
 
     // ── SYS — system integrity ────────────────────────────────────────────────
-    gsap.timeline({
-      scrollTrigger: mkST("#sec-sys", "+=600")
-    })
-    .fromTo(".sys-title",    { opacity:0, y:16 }, { opacity:1, y:0 })
-    .fromTo(".sys-subtitle", { opacity:0, y:16 }, { opacity:1, y:0 }, "-=0.3")
-    .fromTo(".sys-desc",     { opacity:0, y:16 }, { opacity:1, y:0 }, "-=0.3")
-    .fromTo(".sys-card",     { opacity:0, y:24, scale:0.94 }, { opacity:1, y:0, scale:1, stagger:0.1 }, "-=0.2");
+    buildTL("#sec-sys", "+=850")
+    .fromTo(".sys-title",    { opacity:0, y:18 }, { opacity:1, y:0, duration:0.55 })
+    .fromTo(".sys-subtitle", { opacity:0, y:18 }, { opacity:1, y:0, duration:0.5 }, "-=0.25")
+    .fromTo(".sys-desc",     { opacity:0, y:18 }, { opacity:1, y:0, duration:0.5 }, "-=0.25")
+    .to({}, { duration: 0.4 })
+    .fromTo(".sys-card",     { opacity:0, y:28, scale:0.94 }, { opacity:1, y:0, scale:1, stagger:0.16, duration:0.55 });
 
     // ── FAQ — light entrance, no pin ──────────────────────────────────────────
-    gsap.timeline({ scrollTrigger: { trigger:"#sec-faq", start:"top 75%", once:true } })
-    .fromTo(".faq-title",    { opacity:0, y:16 }, { opacity:1, y:0, duration:0.4, ease:"power2.out" })
-    .fromTo(".faq-subtitle", { opacity:0, y:16 }, { opacity:1, y:0, duration:0.4, ease:"power2.out" }, "-=0.25")
-    .fromTo(".faq-item",     { opacity:0, y:20, scale:0.97 }, { opacity:1, y:0, scale:1, stagger:0.1, duration:0.45, ease:"back.out(1.2)" }, "-=0.2");
+    gsap.timeline({ scrollTrigger: { trigger:"#sec-faq", start: isDesktop ? "top 75%" : "top 65%", once:true } })
+    .fromTo(".faq-title",    { opacity:0, y:18 }, { opacity:1, y:0, duration:0.55, ease:"power2.out" })
+    .fromTo(".faq-subtitle", { opacity:0, y:18 }, { opacity:1, y:0, duration:0.5,  ease:"power2.out" }, "-=0.25")
+    .fromTo(".faq-item",     { opacity:0, y:22, scale:0.97 }, { opacity:1, y:0, scale:1, stagger:0.14, duration:0.55, ease:"back.out(1.2)" }, "-=0.2");
 
     // ── FOOTER ────────────────────────────────────────────────────────────────
     gsap.timeline({ scrollTrigger: { trigger:"#sec-foot", start:"top 75%", once:true } })
-    .fromTo(".foot-box",     { opacity:0, y:40, scale:0.97 }, { opacity:1, y:0, scale:1, duration:0.7, ease:"power2.out" })
-    .fromTo(".foot-title",   { opacity:0, y:12 }, { opacity:1, y:0, duration:0.4 }, "-=0.4")
-    .fromTo(".foot-headline",{ opacity:0, y:16 }, { opacity:1, y:0, duration:0.5, ease:"power2.out" }, "-=0.3")
-    .fromTo(".foot-desc",    { opacity:0, y:12 }, { opacity:1, y:0, duration:0.4 }, "-=0.3")
-    .fromTo(".foot-badge",   { opacity:0, scale:0.88, rotate:-3 }, { opacity:1, scale:1, rotate:0, duration:0.5, ease:"back.out(1.2)" }, "-=0.3")
-    .fromTo(".foot-form",    { opacity:0, y:16 }, { opacity:1, y:0, duration:0.4 }, "-=0.2")
-    .fromTo(".foot-details", { opacity:0 },       { opacity:1, duration:0.4 }, "-=0.2");
+    .fromTo(".foot-box",     { opacity:0, y:44, scale:0.97 }, { opacity:1, y:0, scale:1, duration:0.85, ease:"power2.out" })
+    .fromTo(".foot-title",   { opacity:0, y:14 }, { opacity:1, y:0, duration:0.5 }, "-=0.45")
+    .fromTo(".foot-headline",{ opacity:0, y:18 }, { opacity:1, y:0, duration:0.6, ease:"power2.out" }, "-=0.3")
+    .fromTo(".foot-desc",    { opacity:0, y:14 }, { opacity:1, y:0, duration:0.5 }, "-=0.3")
+    .fromTo(".foot-badge",   { opacity:0, scale:0.88, rotate:-3 }, { opacity:1, scale:1, rotate:0, duration:0.6, ease:"back.out(1.2)" }, "-=0.3")
+    .fromTo(".foot-form",    { opacity:0, y:18 }, { opacity:1, y:0, duration:0.5 }, "-=0.25")
+    .fromTo(".foot-details", { opacity:0 },       { opacity:1, duration:0.5 }, "-=0.2");
 
     // Recalculate all trigger positions after every pin has inserted its spacer.
     // Without this, sections 2+ have stale offsets and their pins never activate.
@@ -302,12 +344,23 @@ function Index() {
     // Google Fonts load async and reflow text → positions go stale → re-refresh once fonts settle
     document.fonts.ready.then(() => ScrollTrigger.refresh());
 
-    // Re-calculate on resize / orientation change (phone rotation invalidates all positions)
-    const handleResize = () => ScrollTrigger.refresh();
+    // Only refresh on a real WIDTH change (device rotation / desktop resize). Mobile
+    // address-bar show/hide changes height, not width — refreshing on those caused the
+    // scroll jank and "animations don't fire" behavior. Debounced via rAF so a burst of
+    // resize events collapses into a single refresh.
+    let lastWidth = window.innerWidth;
+    let resizeRaf = 0;
+    const handleResize = () => {
+      if (window.innerWidth === lastWidth) return;
+      lastWidth = window.innerWidth;
+      cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(() => ScrollTrigger.refresh());
+    };
     window.addEventListener("resize", handleResize, { passive: true });
 
     return () => {
       ctx.revert();
+      cancelAnimationFrame(resizeRaf);
       window.removeEventListener("resize", handleResize);
     };
   }, []);
@@ -345,7 +398,7 @@ function Index() {
     }
   };
   return (
-    <main className="lowercase selection:bg-volt selection:text-ink font-sans bg-bone text-ink relative bg-dots overflow-x-hidden">
+    <main className="lowercase selection:bg-volt selection:text-ink font-sans bg-bone text-ink relative bg-dots overflow-x-clip">
       {/* SECTION 1: THE HERO */}
       <section
         id="sec-hero"
@@ -361,10 +414,10 @@ function Index() {
         {/* NAV */}
         <header className="w-full max-w-7xl mx-auto px-5 md:px-8 flex justify-between items-center pt-6 pb-2 z-10 flex-shrink-0">
           <div className="flex items-center gap-2.5 select-none">
-            <Logo size={68} className="w-[52px] h-[52px] md:w-[68px] md:h-[68px]" />
-            <span className="font-display font-black text-2xl tracking-tighter lowercase leading-none">tappd in</span>
+            <Logo size={68} className="w-[60px] h-[60px] md:w-[68px] md:h-[68px]" />
+            <span className="font-display font-black text-2xl md:text-2xl tracking-tighter lowercase leading-none">tappd in</span>
           </div>
-          <div className="flex items-center gap-2 border-[3px] border-ink bg-volt pl-2.5 pr-3.5 py-2 rounded-[10px] shadow-v5-sm select-none">
+          <div className="flex items-center gap-2 border-[3px] border-ink bg-card-light pl-2.5 pr-3.5 py-2 rounded-[10px] shadow-v5-sm select-none">
             <div className="hidden sm:flex -space-x-2.5">
               {(["a","m","s"] as const).map((l, i) => (
                 <div key={l} className={`w-6 h-6 rounded-full border-[2px] border-ink flex items-center justify-center font-mono text-[9px] font-black ${["bg-bone text-ink","bg-electric-light text-bone","bg-pink text-bone"][i]}`}>{l}</div>
@@ -373,7 +426,7 @@ function Index() {
             <div className="flex flex-col leading-none">
               <div className="flex items-center gap-1 mb-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-ink animate-volt-blink" />
-                <span className="font-mono text-[8px] font-bold tracking-wider text-ink/60 uppercase">founder spots</span>
+                <span className="font-mono text-[8px] font-bold tracking-wider text-ink/60 uppercase">waitlist spots</span>
               </div>
               <span className="font-mono font-black text-xs text-ink">{500 - waitlistCount} of 500 left</span>
             </div>
@@ -381,18 +434,13 @@ function Index() {
         </header>
 
         {/* CONTENT */}
-        <div className="flex-1 w-full max-w-7xl mx-auto px-5 md:px-8 flex items-center py-8 md:py-10 z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center w-full">
+        <div className="flex-1 w-full max-w-7xl mx-auto px-5 md:px-8 flex items-center py-6 md:py-6 z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-4 items-center w-full">
 
             {/* LEFT */}
             <div className="col-span-1 lg:col-span-7 flex flex-col gap-5">
               <div className="hero-title opacity-0">
-                {/* Eyebrow chip */}
-                <div className="inline-flex items-center gap-2 border-[2px] border-ink bg-card-light rounded-full px-3 py-1.5 mb-4 shadow-v5-sm">
-                  <span className="w-1.5 h-1.5 rounded-full bg-electric-light animate-volt-blink flex-shrink-0" />
-                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-ink">beta · limited founder spots open</span>
-                </div>
-                <h1 className="font-display font-black text-[2.3rem] sm:text-[3.4rem] md:text-[4.4rem] lg:text-[5.2rem] tracking-tighter leading-[0.88] text-ink">
+                <h1 className="font-display font-black text-[3.4rem] sm:text-[3.8rem] md:text-[4.8rem] lg:text-[5.2rem] tracking-tighter leading-[0.88] text-ink">
                   the fitness app<br />
                   that shows<br />
                   <span className="bg-volt border-[3px] border-ink rounded-[12px] shadow-v5-sm px-3 py-1 inline-block mt-1.5 leading-snug">
@@ -401,23 +449,9 @@ function Index() {
                 </h1>
               </div>
 
-              <p className="hero-subtitle font-sans font-medium text-base md:text-[1.1rem] text-muted-fg-light leading-relaxed max-w-[500px] opacity-0">
-                most apps inflate your numbers to keep you happy. we calculate the real ones — and cite the peer-reviewed study behind every single one.
+              <p className="hero-subtitle font-sans font-medium text-[1.05rem] md:text-[1.15rem] text-muted-fg-light leading-relaxed max-w-[500px] opacity-0">
+                most apps inflate your numbers to keep you happy. we calculate the real ones. then we cite the peer-reviewed study behind every single number.
               </p>
-
-              {/* 3-feature quick wins */}
-              <div className="hero-subtitle flex flex-wrap gap-2 opacity-0">
-                {[
-                  { icon: "◎", label: "NEAT-scored calories" },
-                  { icon: "◈", label: "photo food logging" },
-                  { icon: "◉", label: "study behind every number" },
-                ].map((f) => (
-                  <span key={f.label} className="inline-flex items-center gap-1.5 font-mono text-[10px] font-bold border-[2px] border-ink/20 bg-card-light rounded-full px-3 py-1.5 text-ink/70">
-                    <span className="text-electric-light">{f.icon}</span>
-                    {f.label}
-                  </span>
-                ))}
-              </div>
 
               <div className="hero-form-wrapper flex flex-col gap-3 opacity-0">
                 <form onSubmit={handleFormSubmit} className="flex flex-col sm:flex-row gap-2.5 max-w-[480px]">
@@ -476,106 +510,115 @@ function Index() {
               </div>
             </div>
 
-            {/* RIGHT: IPHONE-STYLE MOCKUP — hidden on mobile, too narrow to be useful */}
-            <div className="hidden lg:flex lg:col-span-5 justify-end">
+            {/* RIGHT: PHONE MOCKUP */}
+            <div className="hidden lg:flex lg:col-span-5 justify-center lg:justify-start">
               <div className="hero-console-wrapper opacity-0 relative select-none">
-                {/* iPhone graphite frame */}
+                {/* Phone frame */}
                 <div style={{
-                  width: 260, height: 528,
-                  background: "linear-gradient(160deg,#2e2e30 0%,#1a1a1c 100%)",
-                  borderRadius: 46, padding: 11,
-                  boxShadow: "0 0 0 1px rgba(255,255,255,0.07), 0 40px 80px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08)"
+                  width: 288, height: 586,
+                  background: "linear-gradient(175deg,#3a3a3c 0%,#252527 40%,#1c1c1e 100%)",
+                  borderRadius: 52, padding: 13,
+                  boxShadow: "0 0 0 1.5px rgba(255,255,255,0.10), 0 0 0 2.5px #111, 0 50px 100px rgba(0,0,0,0.55), inset 0 1.5px 0 rgba(255,255,255,0.12)"
                 }}>
-                  {/* Physical side buttons */}
-                  <div style={{ position:"absolute", right:-4, top:98, width:4, height:42, background:"#3a3a3c", borderRadius:"0 3px 3px 0" }} />
-                  <div style={{ position:"absolute", left:-4, top:82, width:4, height:30, background:"#3a3a3c", borderRadius:"3px 0 0 3px" }} />
-                  <div style={{ position:"absolute", left:-4, top:120, width:4, height:30, background:"#3a3a3c", borderRadius:"3px 0 0 3px" }} />
+                  {/* Physical buttons */}
+                  <div style={{ position:"absolute", right:-4, top:108, width:4, height:52, background:"linear-gradient(180deg,#48484a,#2c2c2e)", borderRadius:"0 4px 4px 0", boxShadow:"inset -1px 0 0 rgba(255,255,255,0.06)" }} />
+                  <div style={{ position:"absolute", left:-4, top:90, width:4, height:34, background:"linear-gradient(180deg,#48484a,#2c2c2e)", borderRadius:"4px 0 0 4px", boxShadow:"inset 1px 0 0 rgba(255,255,255,0.06)" }} />
+                  <div style={{ position:"absolute", left:-4, top:134, width:4, height:34, background:"linear-gradient(180deg,#48484a,#2c2c2e)", borderRadius:"4px 0 0 4px", boxShadow:"inset 1px 0 0 rgba(255,255,255,0.06)" }} />
+                  <div style={{ position:"absolute", left:-4, top:188, width:4, height:34, background:"linear-gradient(180deg,#48484a,#2c2c2e)", borderRadius:"4px 0 0 4px", boxShadow:"inset 1px 0 0 rgba(255,255,255,0.06)" }} />
 
-                  {/* Screen — light mode (app's bone cream) */}
-                  <div style={{ width:"100%", height:"100%", background:"#F2ECDE", borderRadius:37, overflow:"hidden", display:"flex", flexDirection:"column" }}>
-                    {/* Status bar + dynamic island */}
-                    <div style={{ padding:"10px 16px 0", display:"flex", justifyContent:"space-between", alignItems:"center", flexShrink:0, position:"relative" }}>
-                      <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:11, fontWeight:700, color:"#111111" }}>9:41</span>
-                      {/* Dynamic island */}
-                      <div style={{ position:"absolute", left:"50%", top:8, transform:"translateX(-50%)", width:90, height:26, background:"#111111", borderRadius:20 }} />
-                      <div style={{ display:"flex", alignItems:"center", gap:4 }}>
-                        <div style={{ display:"flex", gap:2, alignItems:"flex-end", height:11 }}>
-                          {[30,50,70,100].map((h,i) => (
-                            <div key={i} style={{ width:3, height:`${h}%`, background:"#111111", borderRadius:1 }} />
+                  {/* Screen */}
+                  <div style={{ width:"100%", height:"100%", background:"#F2ECDE", borderRadius:40, overflow:"hidden", display:"flex", flexDirection:"column", position:"relative" }}>
+                    {/* Screen edge gloss */}
+                    <div style={{ position:"absolute", top:0, left:0, right:0, height:80, background:"linear-gradient(180deg,rgba(255,255,255,0.14) 0%,transparent 100%)", borderRadius:"40px 40px 0 0", pointerEvents:"none", zIndex:10 }} />
+
+                    {/* Status bar */}
+                    <div style={{ padding:"14px 18px 0", display:"flex", justifyContent:"space-between", alignItems:"center", flexShrink:0, position:"relative" }}>
+                      <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:11, fontWeight:800, color:"#111111" }}>9:41</span>
+                      {/* Dynamic Island */}
+                      <div style={{ position:"absolute", left:"50%", top:10, transform:"translateX(-50%)", width:100, height:28, background:"#111111", borderRadius:22, zIndex:2 }} />
+                      <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                        {/* Signal */}
+                        <div style={{ display:"flex", gap:2, alignItems:"flex-end", height:10 }}>
+                          {[40,60,80,100].map((h,i) => (
+                            <div key={i} style={{ width:3, height:`${h}%`, background:"#111111", borderRadius:1.5, opacity: i < 3 ? 1 : 0.35 }} />
                           ))}
                         </div>
-                        <div style={{ width:20, height:10, border:"1.5px solid #111", borderRadius:2, display:"flex", alignItems:"center", padding:"1px 1px", position:"relative", marginLeft:2 }}>
-                          <div style={{ position:"absolute", right:-3, top:"50%", transform:"translateY(-50%)", width:2, height:6, background:"#111", borderRadius:"0 1px 1px 0" }} />
-                          <div style={{ width:"68%", height:"100%", background:"#111", borderRadius:1 }} />
+                        {/* WiFi */}
+                        <svg width="13" height="10" viewBox="0 0 13 10" fill="none">
+                          <path d="M6.5 7.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z" fill="#111"/>
+                          <path d="M3.5 5.5A4.2 4.2 0 0 1 6.5 4.4a4.2 4.2 0 0 1 3 1.1" stroke="#111" strokeWidth="1.2" strokeLinecap="round" fill="none"/>
+                          <path d="M1.2 3.2A7 7 0 0 1 6.5 1a7 7 0 0 1 5.3 2.2" stroke="#111" strokeWidth="1.2" strokeLinecap="round" fill="none" opacity="0.4"/>
+                        </svg>
+                        {/* Battery */}
+                        <div style={{ width:22, height:11, border:"1.5px solid rgba(17,17,17,0.8)", borderRadius:3, display:"flex", alignItems:"center", padding:"1.5px", position:"relative" }}>
+                          <div style={{ position:"absolute", right:-4, top:"50%", transform:"translateY(-50%)", width:2.5, height:5.5, background:"rgba(17,17,17,0.6)", borderRadius:"0 1px 1px 0" }} />
+                          <div style={{ width:"72%", height:"100%", background:"#111", borderRadius:1.5 }} />
                         </div>
                       </div>
                     </div>
 
                     {/* App content */}
-                    <div style={{ flex:1, padding:"12px 16px 14px", display:"flex", flexDirection:"column", gap:9, minHeight:0 }}>
-                      {/* Mini breadcrumb */}
-                      <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:7.5, color:"rgba(17,17,17,0.35)", textTransform:"uppercase", letterSpacing:"0.18em" }}>
-                        tappd in · calorie target
+                    <div style={{ flex:1, padding:"10px 16px 16px", display:"flex", flexDirection:"column", gap:8, minHeight:0, overflowY:"hidden" }}>
+                      <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:7.5, color:"rgba(17,17,17,0.32)", textTransform:"uppercase", letterSpacing:"0.18em" }}>
+                        tappd in · calorie calibration
                       </span>
 
-                      {/* Crossed-out generic */}
+                      {/* What other apps give you */}
                       <div>
-                        <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:9, color:"rgba(17,17,17,0.38)", marginBottom:3 }}>other apps give you</div>
-                        <div style={{ position:"relative", display:"inline-block" }}>
-                          <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:21, fontWeight:700, color:"rgba(17,17,17,0.28)", lineHeight:1 }}>2,400 kcal</span>
-                          <div style={{ position:"absolute", top:"50%", left:0, right:0, height:2.5, background:"#FF3B2F", transform:"translateY(-50%)" }} />
+                        <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:8.5, color:"rgba(17,17,17,0.38)", marginBottom:4 }}>other apps give you</div>
+                        <div style={{ position:"relative", display:"inline-flex", alignItems:"center", gap:6 }}>
+                          <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:22, fontWeight:700, color:"rgba(17,17,17,0.25)", lineHeight:1 }}>2,400 kcal</span>
+                          <div style={{ position:"absolute", top:"50%", left:0, right:0, height:2.5, background:"#FF3B2F", transform:"translateY(-50%)", borderRadius:2 }} />
+                          <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:7.5, color:"#FF3B2F", fontWeight:700, marginLeft:2 }}>wrong</span>
                         </div>
                       </div>
 
-                      {/* THE REVEAL — yellow box */}
-                      <div style={{ background:"#E8FF00", border:"2.5px solid #111", borderRadius:12, padding:"10px 14px", boxShadow:"4px 4px 0 #111" }}>
-                        <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:7.5, color:"rgba(17,17,17,0.5)", textTransform:"uppercase", letterSpacing:"0.14em", marginBottom:4 }}>
+                      {/* The actual number */}
+                      <div style={{ background:"#E8FF00", border:"2.5px solid #111", borderRadius:14, padding:"11px 15px", boxShadow:"4px 4px 0 #111" }}>
+                        <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:7.5, color:"rgba(17,17,17,0.5)", textTransform:"uppercase", letterSpacing:"0.14em", marginBottom:5 }}>
                           your real maintenance
                         </div>
                         <div style={{ display:"flex", alignItems:"baseline", gap:5 }}>
-                          <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:40, fontWeight:900, color:"#111111", lineHeight:1, letterSpacing:"-0.03em" }}>2,050</span>
-                          <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:14, fontWeight:700, color:"rgba(17,17,17,0.5)" }}>kcal</span>
+                          <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:42, fontWeight:900, color:"#111111", lineHeight:1, letterSpacing:"-0.03em" }}>2,050</span>
+                          <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:14, fontWeight:700, color:"rgba(17,17,17,0.45)" }}>kcal</span>
                         </div>
-                        <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:7.5, color:"rgba(17,17,17,0.4)", marginTop:3 }}>
-                          NEAT scored · desk lifestyle
+                        <div style={{ display:"flex", justifyContent:"space-between", marginTop:4, paddingTop:4, borderTop:"1px solid rgba(17,17,17,0.12)" }}>
+                          <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:7.5, color:"rgba(17,17,17,0.4)" }}>NEAT scored</span>
+                          <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+                            <div style={{ background:"rgba(0,194,168,0.18)", border:"1px solid rgba(0,194,168,0.4)", borderRadius:3, padding:"1px 5px" }}>
+                              <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:6.5, fontWeight:700, color:"#00C2A8", textTransform:"uppercase" }}>why?</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
 
                       {/* Macro row */}
-                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:6 }}>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:5 }}>
                         {[
                           { label:"protein", val:"160g", color:"#2B3AFF" },
                           { label:"carbs",   val:"220g", color:"#FF7A1A" },
                           { label:"fat",     val:"65g",  color:"#FF2B85" },
                         ].map(m => (
-                          <div key={m.label} style={{ background:"rgba(17,17,17,0.04)", border:"1px solid rgba(17,17,17,0.1)", borderRadius:8, padding:"7px 4px", textAlign:"center" }}>
-                            <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:13, fontWeight:900, color:m.color }}>{m.val}</div>
-                            <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:7, color:"rgba(17,17,17,0.35)", textTransform:"uppercase", letterSpacing:"0.08em" }}>{m.label}</div>
+                          <div key={m.label} style={{ background:"rgba(17,17,17,0.05)", border:"1.5px solid rgba(17,17,17,0.1)", borderRadius:9, padding:"7px 4px", textAlign:"center" }}>
+                            <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:14, fontWeight:900, color:m.color, lineHeight:1.1 }}>{m.val}</div>
+                            <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:6.5, color:"rgba(17,17,17,0.35)", textTransform:"uppercase", letterSpacing:"0.07em", marginTop:2 }}>{m.label}</div>
                           </div>
                         ))}
                       </div>
 
                       {/* NEAT inputs */}
-                      <div style={{ background:"rgba(17,17,17,0.04)", border:"1px solid rgba(17,17,17,0.08)", borderRadius:10, padding:"8px 11px" }}>
-                        <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:7, color:"rgba(17,17,17,0.3)", textTransform:"uppercase", letterSpacing:"0.15em", marginBottom:6 }}>your inputs</div>
+                      <div style={{ background:"rgba(17,17,17,0.04)", border:"1.5px solid rgba(17,17,17,0.08)", borderRadius:11, padding:"9px 12px" }}>
+                        <div style={{ fontFamily:"'Geist Mono',monospace", fontSize:7, color:"rgba(17,17,17,0.28)", textTransform:"uppercase", letterSpacing:"0.15em", marginBottom:7 }}>your real inputs</div>
                         {[
                           { k:"daily steps", v:"4,200" },
                           { k:"job type",    v:"desk job" },
-                          { k:"sitting",     v:"9 hrs/day" },
-                        ].map(row => (
-                          <div key={row.k} style={{ display:"flex", justifyContent:"space-between", paddingBottom:3 }}>
-                            <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:8.5, color:"rgba(17,17,17,0.4)" }}>{row.k}</span>
+                          { k:"sitting hrs", v:"9 hrs/day" },
+                        ].map((row, i) => (
+                          <div key={row.k} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingBottom: i < 2 ? 5 : 0, borderBottom: i < 2 ? "1px solid rgba(17,17,17,0.06)" : "none", marginBottom: i < 2 ? 5 : 0 }}>
+                            <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:8.5, color:"rgba(17,17,17,0.38)" }}>{row.k}</span>
                             <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:8.5, fontWeight:700, color:"rgba(17,17,17,0.7)" }}>{row.v}</span>
                           </div>
                         ))}
-                      </div>
-
-                      {/* Citation chip */}
-                      <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:"auto" }}>
-                        <div style={{ background:"rgba(0,194,168,0.12)", border:"1px solid rgba(0,194,168,0.35)", borderRadius:4, padding:"2px 7px" }}>
-                          <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:7, fontWeight:700, color:"#00C2A8", textTransform:"uppercase", letterSpacing:"0.1em" }}>why?</span>
-                        </div>
-                        <span style={{ fontFamily:"'Geist Mono',monospace", fontSize:7.5, color:"rgba(17,17,17,0.28)" }}>backed by published research</span>
                       </div>
                     </div>
                   </div>
@@ -589,8 +632,8 @@ function Index() {
       </section>
 
       {/* SECTION 2: KINETIC MARQUEE */}
-      <div className="overflow-hidden w-full my-8" style={{ contain: "paint" }}>
-      <div className="w-[110vw] relative -left-[5vw] transform rotate-[-2deg] bg-ink py-4 md:py-5 border-y-[3px] border-ink flex select-none shadow-[0_15px_30px_rgba(17,17,17,0.45)] z-30">
+      <div className="relative w-full my-6" style={{ zIndex: 20 }}>
+      <div className="w-[140vw] relative -left-[20vw] transform rotate-[-2deg] bg-ink py-4 md:py-5 border-y-[3px] border-ink flex select-none shadow-[0_15px_40px_rgba(17,17,17,0.5)]">
         <motion.div
           className="flex whitespace-nowrap text-volt font-mono font-semibold text-xl md:text-3xl tracking-tight gap-8 uppercase-none lowercase pr-8"
           animate={{ x: [0, "-50%"] }}
@@ -601,12 +644,12 @@ function Index() {
           }}
         >
           <span>
-            evidence-based // mathematically strict // no generic slop // evidence-based //
-            mathematically strict // no generic slop //{" "}
+            evidence-based // nutrition · training · recovery · hydration // mathematically strict //
+            no generic slop // all-in-one //{" "}
           </span>
           <span>
-            evidence-based // mathematically strict // no generic slop // evidence-based //
-            mathematically strict // no generic slop //{" "}
+            evidence-based // nutrition · training · recovery · hydration // mathematically strict //
+            no generic slop // all-in-one //{" "}
           </span>
         </motion.div>
       </div>
@@ -615,20 +658,20 @@ function Index() {
       {/* SECTION 3.1: THE COMPETITOR COMPARISON */}
       <section
         id="sec-comp"
-        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-16 md:min-h-screen"
+        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-16 md:min-h-screen"
       >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 lg:gap-14 items-start md:items-center">
-          <div className="lg:col-span-5 flex flex-col justify-center">
+          <div className="lg:col-span-4 flex flex-col justify-center">
             <span className="text-pink font-mono text-xs font-semibold tracking-wider block mb-2">
               01 // the market problem
             </span>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-black tracking-tighter leading-[0.9] text-ink mb-6">
-              why pay $380+ a year?
+              why pay $400+ a year?
             </h2>
             <p className="text-sm md:text-base font-sans font-medium text-muted-fg-light leading-relaxed mb-6">
-              to build a complete, calibrated metabolic stack, you are forced to subscribe to six
-              separate apps. they charge you over $380 a year for fragmented data silos that cannot
-              communicate.
+              to cover all your health pillars - nutrition, training, weight, habits, and sleep - you're
+              forced into seven separate subscriptions. seven apps that can't talk to each other,
+              charging you over $400 a year for fragmented data silos.
             </p>
             <div className="border-[3px] border-ink bg-alert-light/10 rounded-[12px] p-5 shadow-v5 relative overflow-hidden select-none flex flex-col items-center justify-center text-center">
               <span className="font-mono text-[9px] font-bold text-alert-light uppercase tracking-wider">
@@ -636,24 +679,26 @@ function Index() {
               </span>
               <div className="relative inline-block mt-1">
                 <span className="text-4xl md:text-5xl font-mono font-black text-ink tracking-tight">
-                  $385.95/yr
+                  $401.94/yr
                 </span>
                 <div
                   className="price-strike-line absolute left-0 top-1/2 -translate-y-1/2 h-1.5 bg-alert-light w-full origin-left"
                   style={{ transform: "scaleX(0)" }}
                 />
               </div>
+              <p className="font-mono text-[9px] text-ink/40 mt-2">7 apps · 7 bills · 0 shared data</p>
             </div>
           </div>
 
-          <div className="lg:col-span-7 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+          <div className="lg:col-span-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             {[
-              { name: "myfitnesspal", price: "$79.99/yr", limits: "food database only. pays to scan barcodes, spammy ads, no calorie math." },
-              { name: "macrofactor", price: "$71.99/yr", limits: "metabolic math, but manual logging only. no workouts, no coach." },
-              { name: "hevy", price: "$23.99/yr", limits: "clean workout logger. completely isolated from nutrition and weight." },
-              { name: "cronometer", price: "$49.99/yr", limits: "detailed micros, but tedious entry, complex ui, no coaching context." },
-              { name: "cal ai", price: "$120.00/yr", limits: "photo logging, but expensive, no training, no evidence validation." },
-              { name: "lose it!", price: "$39.99/yr", limits: "weight tracking, but generic calorie math, no citations, popups." },
+              { name: "myfitnesspal",  price: "$79.99/yr",  cat: "nutrition",   catColor: "bg-orange/15 text-orange",   limits: "food database only. ads, no calorie math, no coach." },
+              { name: "cronometer",    price: "$49.99/yr",  cat: "nutrition",   catColor: "bg-orange/15 text-orange",   limits: "detailed micros, but tedious entry and complex ui." },
+              { name: "cal ai",        price: "$120.00/yr", cat: "nutrition",   catColor: "bg-orange/15 text-orange",   limits: "photo logging only. no training, no evidence layer." },
+              { name: "hevy",          price: "$23.99/yr",  cat: "workouts",    catColor: "bg-pink/15 text-pink",       limits: "clean workout logger. zero nutrition or weight sync." },
+              { name: "lose it!",      price: "$39.99/yr",  cat: "weight",      catColor: "bg-violet/15 text-violet",   limits: "weight tracking only. generic math, popups, no citations." },
+              { name: "habitica",      price: "$47.99/yr",  cat: "habits",      catColor: "bg-electric-light/15 text-electric-light", limits: "gamified habit tracking. no health data, no fitness sync." },
+              { name: "sleep cycle",   price: "$39.99/yr",  cat: "sleep",       catColor: "bg-violet/20 text-violet",   limits: "sleep tracking only. no nutrition or training context." },
             ].map((app) => (
               <div
                 key={app.name}
@@ -663,6 +708,7 @@ function Index() {
                   <span className="font-sans font-black text-[11px] md:text-sm text-ink leading-tight">{app.name}</span>
                   <span className="bg-alert-light/10 text-alert-light font-bold px-1.5 py-0.5 rounded text-[9px] flex-shrink-0">{app.price}</span>
                 </div>
+                <span className={`self-start font-mono font-bold text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded-[4px] border border-current/20 ${app.catColor}`}>{app.cat}</span>
                 <p className="text-[9px] md:text-[10px] text-muted-fg-light font-sans leading-normal">{app.limits}</p>
               </div>
             ))}
@@ -673,7 +719,7 @@ function Index() {
       {/* SECTION 3.2: THE SOLUTION */}
       <section
         id="sec-solution"
-        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-16 md:min-h-screen"
+        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-16 md:min-h-screen"
       >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 lg:gap-14 items-start md:items-center">
           <div className="lg:col-span-5 flex flex-col justify-center sol-left-panel opacity-0 will-change-gpu">
@@ -684,17 +730,17 @@ function Index() {
               evidence-based science.
             </h2>
             <p className="text-sm md:text-base font-sans font-medium text-muted-fg-light leading-relaxed">
-              tappd in puts calorie calculation, food logging, training, and coaching into one place. your numbers talk to each other. one subscription, the whole thing.
+              tappd in puts calorie math, food logging, training, sleep, hydration, and coaching into one place. every pillar talks to the others. one subscription, the whole stack.
             </p>
           </div>
           <div className="lg:col-span-7 flex flex-col items-center justify-center sol-card-wrapper opacity-0 will-change-gpu">
             {/* 3D Flip Card Container */}
-            <div className="w-full max-w-[580px] h-[320px] sm:h-[400px] md:h-[520px] select-none" style={{ perspective: "1200px" }}>
+            <div className="w-full max-w-[580px] h-[430px] sm:h-[440px] md:h-[520px] select-none" style={{ perspective: "1200px" }}>
               <div className="sol-card-inner relative w-full h-full" style={{ transformStyle: "preserve-3d" }}>
                 
                 {/* CARD FRONT: pricing and branding */}
                 <div 
-                  className="absolute inset-0 w-full h-full bg-card-light border-[3px] border-ink rounded-[14px] p-5 md:p-8 shadow-v5 flex flex-col justify-between"
+                  className="absolute inset-0 w-full h-full bg-card-light border-[3px] border-ink rounded-[14px] p-4 sm:p-5 md:p-8 shadow-v5 flex flex-col justify-between"
                   style={{ backfaceVisibility: "hidden" }}
                 >
                   <div className="flex justify-between items-start">
@@ -705,7 +751,7 @@ function Index() {
                         <span className="font-mono text-[10px] text-muted-fg-light uppercase tracking-wider">[fitness context engine]</span>
                       </div>
                     </div>
-                    <div className="bg-volt text-ink border-[2px] border-ink px-3 py-1 rounded-full text-xs font-mono font-semibold shadow-v5-sm">
+                    <div className="bg-card-light text-ink border-[2px] border-ink px-3 py-1 rounded-full text-xs font-mono font-semibold shadow-v5-sm">
                       beta access open
                     </div>
                   </div>
@@ -756,7 +802,7 @@ function Index() {
 
                 {/* CARD BACK: feature checklist */}
                 <div 
-                  className="absolute inset-0 w-full h-full bg-navy text-bone border-[3px] border-ink rounded-[14px] p-5 md:p-8 shadow-v5 flex flex-col justify-between"
+                  className="absolute inset-0 w-full h-full bg-navy text-bone border-[3px] border-ink rounded-[14px] p-4 sm:p-5 md:p-8 shadow-v5 flex flex-col justify-between"
                   style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
                 >
                   <div className="flex justify-between items-start border-b border-bone/10 pb-3">
@@ -830,9 +876,9 @@ function Index() {
       {/* FEATURE 01: MAINTENANCE ESTIMATION */}
       <section
         id="sec-f1"
-        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-16 md:min-h-screen"
+        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-16 md:min-h-screen"
       >
-        <div className="flex flex-col gap-3 mb-10">
+        <div className="flex flex-col gap-3 mb-6 md:mb-10">
           <span className="f1-title text-pink font-mono text-xs font-semibold tracking-wider block opacity-0">
             03 // the foundation
           </span>
@@ -916,7 +962,7 @@ function Index() {
       {/* FEATURE 02: AI PHOTO SCAN */}
       <section
         id="sec-f2"
-        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-16 md:min-h-screen"
+        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-16 md:min-h-screen"
       >
         {/* AI scan — left: text, right: scan result card */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 lg:gap-14 items-start md:items-center">
@@ -929,57 +975,69 @@ function Index() {
             <p className="text-sm md:text-base font-sans text-muted-fg-light leading-relaxed mb-6">
               take a photo of any dish. the app reads what is on the plate, gives you editable weights and portions, and lets you adjust before anything gets logged. nothing is automatic.
             </p>
-            <div className="f2-oil-badge bg-volt border-[3px] border-ink rounded-[10px] px-4 py-3 shadow-v5-sm opacity-0">
+            <div className="f2-oil-badge bg-volt/15 border-[3px] border-ink rounded-[10px] px-4 py-3 shadow-v5-sm opacity-0">
               <span className="font-mono text-[9px] font-bold uppercase tracking-wider text-ink/60 block mb-1">⚠ oil detected · roasted cauliflower</span>
               <p className="font-sans font-bold text-sm text-ink">
-                roasted means oil. we flag it and make you log it separately. olive oil, ghee, butter. the hidden calories nobody else counts — we do.
+                roasted means oil. we flag it and make you log it separately. olive oil, ghee, butter. the hidden calories nobody else counts. we do.
               </p>
             </div>
           </div>
           <div className="lg:col-span-7 f2-card-col opacity-0">
-            <div className="bg-card-light border-[3px] border-ink rounded-[14px] p-5 md:p-6 shadow-v5-lg">
+            <div className="bg-card-light border-[3px] border-ink rounded-[14px] p-4 md:p-6 shadow-v5-lg">
               <div className="flex justify-between items-center mb-4">
-                <span className="font-mono text-[10px] font-bold text-ink/40 uppercase tracking-wider">ai scan result</span>
+                <span className="font-mono text-[10px] font-bold text-ink/40 uppercase tracking-wider">snap your plate</span>
                 <span className="bg-electric-light text-bone font-mono text-[9px] font-bold px-2.5 py-1 rounded-full border-[2px] border-ink">ai scan</span>
               </div>
-              {/* Real food photo with scanner overlay */}
-              <div className="relative border-[2px] border-ink/20 rounded-[10px] h-44 mb-4 overflow-hidden">
-                <img
-                  src="/chicken-bowl.jpg"
-                  alt="buffalo chicken bowl with brown rice and roasted cauliflower"
-                  className="w-full h-full object-cover"
-                />
-                {/* Scanning gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-b from-electric-light/10 via-transparent to-ink/20 pointer-events-none" />
-                {/* Scanner beam line */}
-                <div className="absolute left-0 right-0 h-[2px] bg-electric-light shadow-[0_0_12px_4px_rgba(43,58,255,0.6)]" style={{ top: "55%" }} />
-                {/* Corner brackets */}
-                <div className="absolute top-2.5 left-2.5 w-5 h-5 border-t-2 border-l-2 border-electric-light rounded-tl" />
-                <div className="absolute top-2.5 right-2.5 w-5 h-5 border-t-2 border-r-2 border-electric-light rounded-tr" />
-                <div className="absolute bottom-2.5 left-2.5 w-5 h-5 border-b-2 border-l-2 border-electric-light rounded-bl" />
-                <div className="absolute bottom-2.5 right-2.5 w-5 h-5 border-b-2 border-r-2 border-electric-light rounded-br" />
-                <span className="absolute bottom-2 left-1/2 -translate-x-1/2 font-mono text-[8px] font-bold text-bone/90 uppercase tracking-widest bg-ink/50 px-2 py-0.5 rounded">analysing</span>
-              </div>
-              {/* Detected ingredients */}
-              <div className="flex flex-col gap-2 mb-4">
-                <span className="font-mono text-[9px] text-muted-fg-light uppercase tracking-wider">detected</span>
-                {[
-                  { name: "buffalo chicken, shredded", weight: "150g", kcal: "192 kcal" },
-                  { name: "brown rice, cooked",        weight: "185g", kcal: "219 kcal" },
-                  { name: "roasted cauliflower",        weight: "85g",  kcal: "52 kcal" },
-                ].map((item) => (
-                  <div key={item.name} className="f2-scan-item flex justify-between items-center font-mono text-xs py-2 px-3 bg-bone border border-ink/10 rounded-[7px] opacity-0">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-ink text-[11px]">{item.name}</span>
-                      <span className="text-muted-fg-light text-[9px]">{item.weight} · editable</span>
-                    </div>
-                    <span className="font-black text-ink">{item.kcal}</span>
+
+              {/* Dual-phase container: photo and ingredients occupy the same space */}
+              <div className="relative border-[2px] border-ink/20 rounded-[10px] aspect-square overflow-hidden mb-4">
+
+                {/* PHASE 1 — food photo + scanning beam */}
+                <div className="f2-photo-phase absolute inset-0">
+                  <img
+                    src="/chicken-bowl.jpg"
+                    alt="buffalo chicken bowl with brown rice and roasted cauliflower"
+                    className="w-full h-full object-cover object-center"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-b from-ink/5 via-transparent to-ink/20 pointer-events-none" />
+                  <div className="f2-scanning-ui absolute inset-0">
+                    <div className="scan-beam-animate h-[2px] bg-electric-light shadow-[0_0_18px_8px_rgba(43,58,255,0.5)]" />
+                    <div className="scan-beam-animate h-20 bg-gradient-to-b from-electric-light/12 to-transparent" style={{ marginTop: "-80px" }} />
+                    <div className="absolute top-3 left-3 w-7 h-7 border-t-[3px] border-l-[3px] border-electric-light" />
+                    <div className="absolute top-3 right-3 w-7 h-7 border-t-[3px] border-r-[3px] border-electric-light" />
+                    <div className="absolute bottom-3 left-3 w-7 h-7 border-b-[3px] border-l-[3px] border-electric-light" />
+                    <div className="absolute bottom-3 right-3 w-7 h-7 border-b-[3px] border-r-[3px] border-electric-light" />
                   </div>
-                ))}
+                </div>
+
+                {/* PHASE 2 — ingredient list, fades in as photo fades out */}
+                <div className="f2-ingr-phase absolute inset-0 bg-card-light p-4 flex flex-col opacity-0">
+                  <span className="font-mono text-[9px] font-bold text-ink/40 uppercase tracking-wider mb-3">identified ingredients</span>
+                  <div className="flex flex-col gap-2.5 flex-1">
+                    {[
+                      "shredded buffalo chicken",
+                      "brown rice, cooked",
+                      "roasted cauliflower",
+                      "spring onion, sliced",
+                      "red chili, fresh",
+                      "lemon juice, squeezed",
+                      "olive oil (for roasting)",
+                    ].map((item) => (
+                      <div key={item} className="f2-ingr-item flex items-center gap-2.5 opacity-0">
+                        <div className="w-1.5 h-1.5 rounded-full bg-electric-light flex-shrink-0" />
+                        <span className="font-sans text-sm font-medium text-ink">{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="font-mono text-[8px] text-muted-fg-light mt-3 pt-2 border-t border-ink/10">
+                    * template estimate. confirm and adjust weights before logging.
+                  </p>
+                </div>
               </div>
-              <div className="flex justify-between items-center pt-3 border-t border-ink/10">
-                <span className="font-mono text-[9px] text-muted-fg-light">*pulled from usda, icmr-nin, and open food facts</span>
-                <span className="font-mono text-xs font-black text-ink">463 kcal</span>
+
+              <div className="f2-results-footer flex justify-between items-center pt-2 border-t border-ink/10 opacity-0">
+                <span className="font-mono text-[9px] text-muted-fg-light">all weights are editable before logging</span>
+                <span className="font-mono text-xs font-black text-electric-light">confirm →</span>
               </div>
             </div>
           </div>
@@ -989,9 +1047,9 @@ function Index() {
       {/* FEATURE 02B: FOUR WAYS TO LOG */}
       <section
         id="sec-f2b"
-        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-16 md:min-h-screen"
+        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-16 md:min-h-screen"
       >
-        <div className="mb-12">
+        <div className="mb-7 md:mb-12">
           <span className="f2b-title font-mono text-xs font-semibold tracking-wider text-pink block mb-3 opacity-0">02 // logging methods</span>
           <h2 className="f2b-subtitle text-3xl md:text-4xl lg:text-5xl font-display font-black tracking-tighter leading-none opacity-0">
             four ways in.<br/>none of them annoying.
@@ -1044,7 +1102,7 @@ function Index() {
       {/* FEATURE 03: WORKOUT GENERATOR */}
       <section
         id="sec-f3"
-        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-16 md:min-h-screen"
+        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-16 md:min-h-screen"
       >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 lg:gap-14 items-start md:items-center">
           <div className="lg:col-span-5 flex flex-col f3-text-col opacity-0">
@@ -1063,7 +1121,7 @@ function Index() {
             </div>
           </div>
           <div className="lg:col-span-7 f3-card-col opacity-0">
-            <div className="bg-card-light border-[3px] border-ink rounded-[14px] p-5 md:p-6 shadow-v5-lg">
+            <div className="bg-card-light border-[3px] border-ink rounded-[14px] p-4 md:p-6 shadow-v5-lg">
               <div className="flex justify-between items-center mb-5 pb-4 border-b border-ink/10">
                 <span className="font-mono text-[10px] font-bold text-ink/40 uppercase tracking-wider">generated plan</span>
                 <span className="bg-volt text-ink border-[2px] border-ink font-mono text-[9px] font-bold px-2.5 py-1 rounded-[6px]">push · pull · legs</span>
@@ -1099,12 +1157,12 @@ function Index() {
       {/* FEATURE 03B: WORKOUT LOGGER */}
       <section
         id="sec-f3b"
-        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-16 md:min-h-screen"
+        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-16 md:min-h-screen"
       >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 lg:gap-14 items-start md:items-center">
           {/* LEFT: active session card */}
           <div className="lg:col-span-7 f3b-card-col opacity-0">
-            <div className="bg-navy text-bone border-[3px] border-ink rounded-[14px] p-5 md:p-6 shadow-v5-lg">
+            <div className="bg-navy text-bone border-[3px] border-ink rounded-[14px] p-4 md:p-6 shadow-v5-lg">
               <div className="flex justify-between items-center mb-5 pb-4 border-b border-bone/10">
                 <div>
                   <span className="font-mono text-[9px] text-bone/40 uppercase tracking-wider block">active session</span>
@@ -1194,12 +1252,168 @@ function Index() {
         </div>
       </section>
 
+      {/* FEATURE 05: SLEEP & RECOVERY */}
+      <section
+        id="sec-sleep"
+        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-16 md:min-h-screen"
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 lg:gap-14 items-start md:items-center">
+          {/* LEFT: text */}
+          <div className="lg:col-span-5 flex flex-col sleep-text-col opacity-0">
+            <span className="text-5xl md:text-7xl lg:text-8xl font-mono font-bold text-ink/5 select-none leading-none mb-1">05</span>
+            <span className="text-violet font-mono text-xs font-semibold tracking-wider block mb-1">recovery // the third pillar</span>
+            <h3 className="text-2xl md:text-3xl font-display font-black tracking-tight mb-3 text-ink leading-tight">
+              your recovery, finally in the equation.
+            </h3>
+            <p className="text-sm md:text-base font-sans text-muted-fg-light leading-relaxed mb-5">
+              nutrition and training only pay off if you recover. sync sleep straight from apple health, oura, whoop, or garmin - or log it by hand in two taps. we score the night, track your trend, and feed it back into your calories and training load. now it's the full stack: fuel, train, recover.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {["apple health", "oura", "whoop", "garmin", "manual"].map((src) => (
+                <span key={src} className="sleep-source font-mono text-[9px] font-bold uppercase tracking-wide border-[2px] border-ink rounded-[6px] px-2.5 py-1 bg-card-light shadow-v5-sm opacity-0">{src}</span>
+              ))}
+            </div>
+          </div>
+          {/* RIGHT: sleep card */}
+          <div className="lg:col-span-7 sleep-card-col opacity-0">
+            <div className="bg-navy text-bone border-[3px] border-ink rounded-[14px] p-4 md:p-6 shadow-v5-lg">
+              <div className="flex justify-between items-center mb-5 pb-4 border-b border-bone/10">
+                <div>
+                  <span className="font-mono text-[9px] text-bone/40 uppercase tracking-wider block">last night</span>
+                  <span className="font-display font-black text-xl text-bone tracking-tight lowercase">sleep report</span>
+                </div>
+                <span className="bg-teal/15 border-[2px] border-teal/40 text-teal font-mono text-[9px] font-bold px-2.5 py-1 rounded-full">synced · apple health</span>
+              </div>
+              {/* duration + score */}
+              <div className="flex items-end justify-between mb-5">
+                <div className="sleep-stat flex flex-col">
+                  <span className="font-mono text-[9px] text-bone/40 uppercase tracking-wider mb-1">time asleep</span>
+                  <span className="font-mono font-black text-4xl md:text-5xl text-bone leading-none tracking-tight">7h 12m</span>
+                </div>
+                <div className="sleep-stat flex flex-col items-center bg-bone/5 border-[2px] border-bone/15 rounded-[10px] px-4 py-2">
+                  <span className="font-mono text-[8px] text-bone/40 uppercase tracking-wider">score</span>
+                  <span className="font-mono font-black text-3xl text-teal leading-none">84</span>
+                </div>
+              </div>
+              {/* stage bar */}
+              <div className="mb-2">
+                <div className="flex h-6 rounded-[6px] overflow-hidden border-[2px] border-ink">
+                  <div className="sleep-stage bg-electric-light" style={{ width: "22%" }} />
+                  <div className="sleep-stage bg-violet" style={{ width: "24%" }} />
+                  <div className="sleep-stage bg-teal" style={{ width: "48%" }} />
+                  <div className="sleep-stage bg-bone/20" style={{ width: "6%" }} />
+                </div>
+                <div className="flex justify-between mt-2 font-mono text-[8px] text-bone/45 uppercase tracking-wide">
+                  <span><span className="text-electric-light">■</span> deep 1h36</span>
+                  <span><span className="text-violet">■</span> rem 1h44</span>
+                  <span><span className="text-teal">■</span> light 3h28</span>
+                  <span><span className="text-bone/40">■</span> awake 24m</span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center pt-3 mt-3 border-t border-bone/10 font-mono text-[9px] text-bone/40">
+                <span>*fed into today's calorie + training load.</span>
+                <span className="text-teal font-bold">+12 min vs your avg</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURE 06: HYDRATION */}
+      <section
+        id="sec-hydration"
+        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-16 md:min-h-screen"
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 lg:gap-14 items-start md:items-center">
+          {/* LEFT: hydration card */}
+          <div className="lg:col-span-7 hydr-card-col opacity-0">
+            <div className="bg-card-light border-[3px] border-ink rounded-[14px] p-4 md:p-6 shadow-v5-lg">
+              <div className="flex justify-between items-center mb-5">
+                <span className="font-mono text-[10px] font-bold text-ink/40 uppercase tracking-wider">hydration · today</span>
+                <span className="bg-electric-light text-bone font-mono text-[9px] font-bold px-2.5 py-1 rounded-full border-[2px] border-ink">tap to add</span>
+              </div>
+              {/* total */}
+              <div className="flex items-end gap-2 mb-4">
+                <span className="hydr-total font-mono font-black text-4xl md:text-5xl text-ink leading-none tracking-tight">1.8L</span>
+                <span className="font-mono text-sm text-ink/40 mb-1">/ 2.5L goal</span>
+              </div>
+              {/* glasses - SVG-based for real glass shape */}
+              <div className="grid grid-cols-8 gap-1.5 mb-3">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="hydr-glass opacity-0 flex flex-col items-center">
+                    <svg viewBox="0 0 32 48" width="100%" className="overflow-visible">
+                      {/* glass outline */}
+                      <path
+                        d="M4 4 L28 4 L24 44 Q24 46 20 46 L12 46 Q8 46 8 44 Z"
+                        fill={i < 6 ? "rgba(232,255,0,0.12)" : "rgba(17,17,17,0.04)"}
+                        stroke="#111111"
+                        strokeWidth="2"
+                        strokeLinejoin="round"
+                      />
+                      {/* water fill */}
+                      {i < 6 && (
+                        <clipPath id={`glass-clip-${i}`}>
+                          <path d="M4.5 4.5 L27.5 4.5 L23.7 43.5 Q23.7 45.2 20 45.2 L12 45.2 Q8.3 45.2 8.3 43.5 Z" />
+                        </clipPath>
+                      )}
+                      {i < 6 && (
+                        <rect
+                          x="0" y="4" width="32" height="42"
+                          fill="#E8FF00"
+                          fillOpacity="0.75"
+                          clipPath={`url(#glass-clip-${i})`}
+                        />
+                      )}
+                      {/* rim highlight */}
+                      <line x1="5" y1="7" x2="27" y2="7" stroke="rgba(255,255,255,0.35)" strokeWidth="1" strokeLinecap="round" />
+                      {/* + on unfilled glass */}
+                      {i === 6 && (
+                        <text x="16" y="29" textAnchor="middle" fontFamily="'Geist Mono',monospace" fontSize="14" fontWeight="900" fill="rgba(17,17,17,0.3)">+</text>
+                      )}
+                    </svg>
+                  </div>
+                ))}
+              </div>
+              <span className="font-mono text-[9px] text-ink/35 block mb-4">each glass = 300ml · tap to log, hold to set a custom amount</span>
+              {/* electrolytes */}
+              <div className="border-t border-ink/10 pt-4">
+                <span className="font-mono text-[9px] font-bold text-ink/40 uppercase tracking-wider block mb-3">electrolytes - not just water</span>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { n: "sodium", v: "1.6 / 2g", pct: 80, c: "bg-orange" },
+                    { n: "potassium", v: "2.9 / 3.5g", pct: 72, c: "bg-violet" },
+                    { n: "magnesium", v: "310 / 400mg", pct: 64, c: "bg-teal" },
+                  ].map((e) => (
+                    <div key={e.n} className="hydr-electro opacity-0">
+                      <span className="font-sans font-bold text-[10px] text-ink block mb-1">{e.n}</span>
+                      <div className="h-1.5 bg-ink/10 rounded-full overflow-hidden mb-1"><div className={`h-full ${e.c} rounded-full`} style={{ width: `${e.pct}%` }} /></div>
+                      <span className="font-mono text-[8px] text-ink/45">{e.v}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* RIGHT: text */}
+          <div className="lg:col-span-5 flex flex-col hydr-text-col opacity-0">
+            <span className="text-5xl md:text-7xl lg:text-8xl font-mono font-bold text-ink/5 select-none leading-none mb-1">06</span>
+            <span className="text-electric-light font-mono text-xs font-semibold tracking-wider block mb-1">hydration // beyond water</span>
+            <h3 className="text-2xl md:text-3xl font-display font-black tracking-tight mb-3 text-ink leading-tight">
+              hydration is more than ounces.
+            </h3>
+            <p className="text-sm md:text-base font-sans text-muted-fg-light leading-relaxed">
+              tap a glass, log 300ml - the fastest way to stay on top of water. but real hydration is electrolytes too. we track sodium, potassium, and magnesium against targets scaled to your sweat, training, and climate, so you actually absorb the water instead of just drinking it.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* FEATURE 04: THE AI COACH */}
       <section
         id="sec-f4"
-        className="w-full flex flex-col justify-center max-w-4xl mx-auto px-4 md:px-8 py-12 md:py-16 md:min-h-screen"
+        className="w-full flex flex-col justify-center max-w-4xl mx-auto px-4 md:px-8 py-8 md:py-16 md:min-h-screen"
       >
-        <div className="flex flex-col items-center text-center mb-8 md:mb-12 f4-text-col opacity-0 will-change-gpu">
+        <div className="flex flex-col items-center text-center mb-6 md:mb-12 f4-text-col opacity-0 will-change-gpu">
           <span className="text-pink font-mono text-xs font-semibold tracking-wider block mb-2 uppercase">
             04 // the coach
           </span>
@@ -1207,13 +1421,13 @@ function Index() {
             science-backed coaching
           </h3>
           <p className="text-sm md:text-base font-sans text-muted-fg-light leading-relaxed max-w-2xl">
-            the coach knows your numbers. your calories today, your last workout, how your training volume is stacking up, what you ate. it answers from that context, not from a generic playbook. every response cites a study. no bro science, no invented claims.
+            the coach knows your numbers. your calories today, your last workout, how your training volume is stacking up, what you ate. it answers from that context, not from a generic playbook. every response cites a study. no bro science, no invented claims. and now you can just talk to it - ask out loud mid-workout and hear the answer back.
           </p>
         </div>
 
         <div 
           id="f4-coach-chat" 
-          className="w-full max-w-2xl mx-auto bg-navy text-bone border-[3px] border-ink rounded-[14px] p-5 md:p-8 shadow-v5 flex flex-col justify-between sm:min-h-[360px] md:min-h-[420px] f4-card-col opacity-0 will-change-gpu"
+          className="w-full max-w-2xl mx-auto bg-navy text-bone border-[3px] border-ink rounded-[14px] p-4 sm:p-5 md:p-8 shadow-v5 flex flex-col justify-between sm:min-h-[360px] md:min-h-[420px] f4-card-col opacity-0 will-change-gpu"
         >
           <div>
             <div className="flex justify-between items-start mb-5 border-b border-bone/10 pb-4">
@@ -1221,7 +1435,7 @@ function Index() {
                 <Logo size={40} dotColor="#E8FF00" iconColor="#F2ECDE" />
                 <div className="flex flex-col text-left">
                   <span className="font-display font-black text-xl tracking-tighter text-bone lowercase leading-none">tappd coach</span>
-                  <span className="font-mono text-[9px] text-muted-fg-dark uppercase tracking-wider mt-1">[active coach engine]</span>
+                  <span className="font-mono text-[9px] text-muted-fg-dark uppercase tracking-wider mt-1">[active · voice enabled]</span>
                 </div>
               </div>
               <div className="bg-volt text-ink border-[2px] border-ink px-3 py-1 rounded-full text-xs font-mono font-semibold animate-pulse shadow-v5-sm">
@@ -1229,25 +1443,55 @@ function Index() {
               </div>
             </div>
             
-            <div className="flex-1 flex flex-col gap-4 font-mono text-xs mb-6 mt-4">
-              {/* User bubble */}
-              <div className="f4-chat-bubble self-end max-w-[85%] bg-bone/10 border border-bone/20 text-bone rounded-lg px-3 py-2 font-semibold text-right opacity-0 text-[11px] sm:text-xs">
+            <div className="flex flex-col gap-3 font-mono text-xs mb-4 mt-2">
+              {/* User turn 1 */}
+              <div className="f4-chat-bubble self-end max-w-[78%] bg-bone/10 border border-bone/20 text-bone rounded-[10px] px-3 py-2.5 text-right opacity-0 text-[11px] font-sans">
                 why's my bench stalling?
               </div>
-              {/* Coach response - HIGHLIGHTED */}
-              <div className="f4-chat-bubble self-start max-w-[90%] bg-volt text-ink rounded-lg px-4 py-3 text-left font-sans font-bold leading-normal border-[3px] border-ink shadow-v5-sm opacity-0 relative text-xs sm:text-sm my-1.5">
-                <div className="absolute -top-3 left-3 bg-pink text-bone border-[2px] border-ink px-2 py-0.5 rounded text-[8px] sm:text-[9px] font-mono uppercase tracking-wider shadow-v5-none select-none">
-                  coach response
+
+              {/* Coach turn 1 */}
+              <div className="f4-chat-bubble self-start max-w-[95%] bg-card-light text-ink rounded-[10px] px-4 py-3 text-left font-sans leading-snug border-[3px] border-ink shadow-v5-sm opacity-0 relative text-[11px] sm:text-xs">
+                <div className="absolute -top-3 left-3 bg-pink text-bone border-[2px] border-ink px-2 py-0.5 rounded text-[8px] font-mono uppercase tracking-wider select-none">coach</div>
+                your protein averaged 133g over the past 3 days. your target is 165g. that's a 32g gap on your hardest recovery days. under-fuelled repair slows strength gains even when training is consistent.
+              </div>
+
+              {/* Study citation */}
+              <div className="f4-chat-bubble self-start flex items-center gap-2 bg-teal/10 border border-teal/30 rounded-[8px] px-3 py-2 opacity-0">
+                <span className="bg-teal/15 border border-teal/35 text-teal font-mono text-[7px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide flex-shrink-0">study</span>
+                <span className="font-mono text-[10px] text-bone/60">Morton RW et al. · Br J Sports Med · 2018</span>
+              </div>
+
+              {/* User turn 2 */}
+              <div className="f4-chat-bubble self-end max-w-[78%] bg-bone/10 border border-bone/20 text-bone rounded-[10px] px-3 py-2.5 text-right opacity-0 text-[11px] font-sans">
+                i thought i was eating enough
+              </div>
+
+              {/* Coach turn 2 */}
+              <div className="f4-chat-bubble self-start max-w-[95%] bg-navy/80 border border-bone/15 text-bone rounded-[10px] px-4 py-3 text-left font-sans leading-snug opacity-0 text-[11px]">
+                your calorie total was fine - you hit close to your target. the protein was the gap. carbs and fat filled those calories instead. same total, wrong split.
+                <div className="mt-2 pt-2 border-t border-bone/10 font-mono text-[9px] text-bone/40">
+                  23g short tonight. want me to build a meal around closing it?
                 </div>
-                your protein is 32g short, 3 days this week. bump it to 165g.
               </div>
             </div>
           </div>
 
           <div className="flex flex-col gap-4 mt-auto">
-            <div className="bg-bone/5 border border-bone/10 text-bone/45 text-[10px] font-mono px-4 py-3 rounded-[8px] flex justify-between items-center select-none">
-              <span>ask anything (e.g., how's my training frequency?) ...</span>
-              <span className="w-1.5 h-3.5 bg-volt animate-pulse" />
+            <div className="bg-bone/5 border border-bone/10 text-bone/45 text-[10px] font-mono px-3 py-2.5 rounded-[8px] flex items-center gap-3 select-none">
+              {/* mic button */}
+              <span className="flex-shrink-0 w-7 h-7 rounded-full bg-pink border-[2px] border-ink flex items-center justify-center">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#0d0f1c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="9" y="2" width="6" height="11" rx="3" fill="#0d0f1c" stroke="none" />
+                  <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+                </svg>
+              </span>
+              {/* live waveform */}
+              <span className="flex items-center gap-[3px] h-4 flex-1">
+                {[40, 75, 55, 95, 60, 85, 45, 70, 50, 90, 55, 65, 42, 80, 50].map((h, i) => (
+                  <span key={i} className="voice-bar w-[3px] bg-volt rounded-full" style={{ height: `${h}%`, animationDelay: `${i * 0.07}s` }} />
+                ))}
+              </span>
+              <span className="flex-shrink-0 text-bone/50">hold to talk</span>
             </div>
             <div className="pt-3 border-t border-bone/10 flex justify-between items-center select-none text-[9px] text-bone/45 font-mono">
               <span>*every response cites a real study. ask it to show you.</span>
@@ -1258,10 +1502,103 @@ function Index() {
 
       </section>
 
+      {/* FEATURE 07: STREAK RINGS */}
+      <section
+        id="sec-streak"
+        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-16 md:min-h-screen"
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 lg:gap-14 items-start md:items-center">
+          {/* LEFT: text */}
+          <div className="lg:col-span-5 flex flex-col streak-text-col opacity-0">
+            <span className="text-5xl md:text-7xl lg:text-8xl font-mono font-bold text-ink/5 select-none leading-none mb-1">07</span>
+            <span className="text-pink font-mono text-xs font-semibold tracking-wider block mb-1">consistency // the four rings</span>
+            <h3 className="text-2xl md:text-3xl font-display font-black tracking-tight mb-3 text-ink leading-tight">
+              close four rings. keep the streak.
+            </h3>
+            <p className="text-sm md:text-base font-sans text-muted-fg-light leading-relaxed mb-5">
+              one ring per pillar - nutrition, hydration, sleep, and training. hit all four targets in a day and the day counts. miss one and the ring stays open. no vanity metrics, no participation trophies: the streak only moves when you do the work across every pillar.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { n: "nutrition", c: "bg-orange" },
+                { n: "hydration", c: "bg-electric-light" },
+                { n: "sleep", c: "bg-violet" },
+                { n: "training", c: "bg-pink" },
+              ].map((p) => (
+                <span key={p.n} className="streak-legend flex items-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-wide border-[2px] border-ink rounded-[6px] px-2.5 py-1 bg-card-light shadow-v5-sm opacity-0">
+                  <span className={`w-2 h-2 rounded-full ${p.c} border border-ink`} />{p.n}
+                </span>
+              ))}
+            </div>
+          </div>
+          {/* RIGHT: rings card */}
+          <div className="lg:col-span-7 streak-card-col opacity-0">
+            <div className="bg-navy text-bone border-[3px] border-ink rounded-[14px] p-5 md:p-8 shadow-v5-lg flex flex-col sm:flex-row items-center gap-6 md:gap-8">
+              {/* rings */}
+              <div className="relative w-[200px] h-[200px] sm:w-[220px] sm:h-[220px] flex-shrink-0">
+                <svg viewBox="0 0 200 200" className="w-full h-full -rotate-90">
+                  {[
+                    { r: 90, c: "var(--color-orange)" },
+                    { r: 68, c: "var(--color-electric-light)" },
+                    { r: 46, c: "var(--color-violet)" },
+                    { r: 24, c: "var(--color-pink)" },
+                  ].map((ring, i) => {
+                    const C = 2 * Math.PI * ring.r;
+                    return (
+                      <g key={i}>
+                        <circle cx="100" cy="100" r={ring.r} fill="none" stroke="rgba(231,218,187,0.10)" strokeWidth="15" />
+                        <circle
+                          className="streak-ring"
+                          cx="100" cy="100" r={ring.r}
+                          fill="none" stroke={ring.c} strokeWidth="15" strokeLinecap="butt"
+                          strokeDasharray={C} strokeDashoffset={C} data-c={C}
+                        />
+                      </g>
+                    );
+                  })}
+                </svg>
+                {/* center streak count */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="streak-count font-mono font-black text-4xl text-bone leading-none">12</span>
+                  <span className="font-mono text-[8px] text-bone/50 uppercase tracking-[0.2em] mt-1">day streak</span>
+                </div>
+              </div>
+              {/* breakdown */}
+              <div className="flex-1 w-full flex flex-col gap-3">
+                <div className="flex items-center justify-between pb-3 border-b border-bone/10">
+                  <span className="font-display font-black text-lg text-bone tracking-tight lowercase">today's rings</span>
+                  <span className="bg-volt text-ink border-[2px] border-ink font-mono text-[8px] font-black px-2 py-0.5 rounded-full uppercase">4 / 4 closed</span>
+                </div>
+                {[
+                  { n: "nutrition", v: "2,050 / 2,050 kcal", dot: "bg-orange" },
+                  { n: "hydration", v: "2.5 / 2.5 L", dot: "bg-electric-light" },
+                  { n: "sleep", v: "7h 12m · scored", dot: "bg-violet" },
+                  { n: "training", v: "push day a · done", dot: "bg-pink" },
+                ].map((row) => (
+                  <div key={row.n} className="streak-row flex items-center justify-between opacity-0">
+                    <div className="flex items-center gap-2.5">
+                      <span className={`w-2.5 h-2.5 rounded-full ${row.dot} border border-bone/30`} />
+                      <span className="font-sans font-bold text-xs text-bone">{row.n}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[9px] text-bone/50">{row.v}</span>
+                      <span className="font-mono text-teal text-xs font-black">✓</span>
+                    </div>
+                  </div>
+                ))}
+                <div className="pt-3 border-t border-bone/10 font-mono text-[9px] text-bone/40">
+                  *all four closed today - streak safe. longest: 41 days.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* SECTION: WHY BUTTON */}
       <section
         id="sec-why"
-        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-16 md:min-h-screen"
+        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-16 md:min-h-screen"
       >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center w-full">
 
@@ -1298,26 +1635,29 @@ function Index() {
           {/* RIGHT — live demo card */}
           <div className="lg:col-span-7 flex justify-center lg:justify-end">
             <div className="why-card opacity-0 w-full max-w-lg">
-              <div className="bg-card-light border-[3px] border-ink rounded-[14px] p-5 shadow-v5-lg">
+              <div className="bg-card-light border-[3px] border-ink rounded-[14px] overflow-hidden shadow-v5-lg">
 
-                {/* Header row */}
-                <div className="flex items-center justify-between mb-4 pb-4 border-b border-ink/10">
-                  <span className="font-mono text-[10px] font-bold text-ink/40 uppercase tracking-wider">your daily targets</span>
-                  <span className="font-mono text-[9px] text-muted-fg-light">tap [why?] on anything</span>
+                {/* App-style header bar */}
+                <div className="bg-navy px-5 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <Logo size={28} dotColor="#E8FF00" iconColor="#F2ECDE" />
+                    <span className="font-display font-black text-base text-bone tracking-tight">your targets</span>
+                  </div>
+                  <span className="font-mono text-[9px] text-bone/35 uppercase tracking-wider">tap why? for the study</span>
                 </div>
 
-                {/* Recommendation rows */}
-                <div className="flex flex-col gap-0 mb-4">
+                {/* Target rows */}
+                <div className="px-5 divide-y divide-ink/8">
                   {[
-                    { label: "maintenance", val: "2,050 kcal" },
-                    { label: "fat loss target", val: "1,710 kcal" },
-                    { label: "protein", val: "160g" },
-                  ].map((row, i) => (
-                    <div key={row.label} className={`flex justify-between items-center py-2.5 ${i < 2 ? "border-b border-ink/8" : ""}`}>
+                    { label: "maintenance", val: "2,050 kcal", active: false },
+                    { label: "fat loss target", val: "1,710 kcal", active: false },
+                    { label: "protein target", val: "160g", active: true },
+                  ].map((row) => (
+                    <div key={row.label} className="flex justify-between items-center py-3.5">
                       <span className="font-sans text-sm font-medium text-muted-fg-light">{row.label}</span>
                       <div className="flex items-center gap-2.5">
                         <span className="font-mono text-sm font-black text-ink">{row.val}</span>
-                        <span className={`border-[2px] border-ink font-mono text-[9px] font-black px-1.5 py-0.5 rounded-[5px] shadow-v5-sm select-none ${i === 2 ? "bg-volt text-ink" : "bg-bone text-ink/50"}`}>
+                        <span className={`border-[2px] border-ink font-mono text-[9px] font-black px-1.5 py-0.5 rounded-[5px] shadow-v5-sm select-none cursor-pointer ${row.active ? "bg-volt text-ink" : "bg-bone text-ink/35"}`}>
                           why?
                         </span>
                       </div>
@@ -1325,38 +1665,28 @@ function Index() {
                   ))}
                 </div>
 
-                {/* Expanded evidence card — shows what opens on tap */}
-                <div className="bg-navy border-[2px] border-ink rounded-[10px] overflow-hidden">
-                  <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-bone/10">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-[8px] font-bold text-teal uppercase tracking-wider">protein</span>
-                      <span className="w-1 h-1 rounded-full bg-bone/20" />
-                      <span className="font-mono text-[8px] text-bone/40">why your target is 160g</span>
+                {/* Open evidence panel */}
+                <div className="mx-4 my-4 bg-navy rounded-[10px] p-4">
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex-1">
+                      <span className="font-mono text-[9px] font-bold text-teal uppercase tracking-wider">protein target · 160g</span>
+                      <p className="font-sans text-sm text-bone/85 leading-relaxed mt-2">
+                        1.6 to 2.4g per kg of bodyweight maximises muscle growth. past this range, extra protein has no measurable benefit.
+                      </p>
                     </div>
-                    <span className="bg-teal/15 border border-teal/35 text-teal font-mono text-[7px] font-bold px-2 py-0.5 rounded uppercase tracking-wide">
-                      HIGH
-                    </span>
+                    <span className="bg-teal/15 border border-teal/35 text-teal font-mono text-[7px] font-bold px-2 py-0.5 rounded uppercase tracking-wide flex-shrink-0 mt-0.5">HIGH</span>
                   </div>
-                  <div className="px-4 py-3 flex flex-col gap-3">
-                    <p className="font-sans text-sm text-bone/85 leading-relaxed">
-                      protein intakes of 1.6 to 2.4g/kg per day maximise muscle growth and retention. past this range, extra protein has no measurable benefit. those calories are better spent on carbs.
-                    </p>
-                    <div className="flex items-center justify-between pt-2.5 border-t border-bone/10">
-                      <div>
-                        <span className="font-mono text-[8.5px] text-bone/50 block">morton rw et al.</span>
-                        <span className="font-mono text-[8.5px] text-bone/35 block">british journal of sports medicine · 2018</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 bg-teal/15 border border-teal/35 text-teal font-mono text-[9px] font-bold px-3 py-1.5 rounded-[6px]">
-                        <span>read study</span>
-                        <span>→</span>
-                      </div>
+                  <div className="flex items-center justify-between pt-3 border-t border-bone/10">
+                    <div>
+                      <span className="font-mono text-[8px] text-bone/45 block">Morton RW et al.</span>
+                      <span className="font-mono text-[8px] text-bone/30">British Journal of Sports Medicine · 2018</span>
                     </div>
+                    <span className="bg-teal/15 border border-teal/35 text-teal font-mono text-[9px] font-bold px-3 py-1.5 rounded-[6px] flex items-center gap-1">
+                      read study →
+                    </span>
                   </div>
                 </div>
 
-                <p className="font-mono text-[9px] text-muted-fg-light text-center mt-4 pt-3 border-t border-ink/8">
-                  every why? card links to the actual study. tap and it opens. read it yourself.
-                </p>
               </div>
             </div>
           </div>
@@ -1367,9 +1697,9 @@ function Index() {
       {/* SECTION 5: THE SCIENCE LIBRARY */}
       <section
         id="sec-sys"
-        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-16 md:min-h-screen"
+        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-16 md:min-h-screen"
       >
-        <div className="flex flex-col gap-4 mb-10">
+        <div className="flex flex-col gap-4 mb-6 md:mb-10">
           <span className="sys-title text-teal font-mono text-xs font-semibold tracking-wider block opacity-0">
             05 // the science
           </span>
@@ -1437,9 +1767,9 @@ function Index() {
       {/* SECTION FAQ */}
       <section
         id="sec-faq"
-        className="w-full flex flex-col justify-center max-w-4xl mx-auto px-4 md:px-8 py-12 md:py-16 md:min-h-screen"
+        className="w-full flex flex-col justify-center max-w-4xl mx-auto px-4 md:px-8 py-8 md:py-16 md:min-h-screen"
       >
-        <div className="flex flex-col gap-3 mb-10">
+        <div className="flex flex-col gap-3 mb-6 md:mb-10">
           <span className="faq-title text-pink font-mono text-xs font-semibold tracking-wider block opacity-0">
             06 // faq
           </span>
@@ -1450,28 +1780,28 @@ function Index() {
         <div className="flex flex-col gap-4">
           {[
             {
-              q: "is it really evidence-based or is that marketing?",
-              a: "it is real. every claim in the app links to an actual published study you can open and read yourself. for example, we cap the protein target at 1.8g per kg because the research shows more than that does almost nothing for muscle. that is not our opinion, it is what the studies found.",
+              q: "is it actually evidence-based, or is that marketing?",
+              a: "every number in the app links to a published study. tap any calorie target, macro recommendation, or training guideline and you get the paper, the confidence level, and a plain-english summary. we cap protein at 1.6 to 2.4g per kg because that is what the meta-analyses show. not our opinion, the research.",
             },
             {
-              q: "what makes your calorie number different from myfitnesspal?",
-              a: "most apps assume you move more than you do. we actually score your daily movement (your steps, your sitting hours, your job). for someone with a desk job, the real number is often 300 to 400 calories lower than what other apps hand you. that gap is exactly why the scale stops moving.",
+              q: "why is your calorie number different from other apps?",
+              a: "other apps apply a generic activity multiplier. we score your actual movement: daily steps, sitting hours, job type, commute. for a desk job with under 5,000 steps, the real maintenance is often 300 to 400 kcal lower than what other apps give you. that gap is why progress stalls.",
             },
             {
-              q: "do i need an account to start?",
-              a: "no. you can set up and see your real maintenance number in about 2 minutes with no account. accounts are for syncing across devices.",
+              q: "do i need an account to get started?",
+              a: "no. you can see your real maintenance target in about two minutes with no account needed. accounts unlock cross-device sync.",
             },
             {
               q: "android or ios?",
-              a: "android first. ios shortly after. join the waitlist and you get the download link on launch day.",
+              a: "android first, ios shortly after. join the waitlist and you receive your download link on launch day.",
             },
             {
-              q: "what does the 20% off actually lock?",
-              a: "join before launch and you keep the founder rate forever: $7.99/mo on monthly or $47.99/yr on yearly. after launch, prices go to $10/mo and $59.99/yr.",
+              q: "what exactly does the 20% off lock in?",
+              a: "join before launch and your price is fixed: $7.99 per month on the monthly plan or $47.99 per year on the yearly plan. after launch both prices increase. no action needed after joining - the rate is locked at the moment you submit.",
             },
             {
-              q: "will my email get spammed?",
-              a: "no. one email on launch day with your download link. that is it. you decide what to do after.",
+              q: "what happens to my email after i join?",
+              a: "one email on launch day with your download link. nothing else. no drip campaigns, no newsletters, no upsells. you decide what to do from there.",
             },
           ].map((item) => (
             <details
@@ -1495,13 +1825,13 @@ function Index() {
       {/* SECTION 7: FOOTER & WAITING LIST */}
       <section
         id="sec-foot"
-        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-16 md:min-h-screen"
+        className="w-full flex flex-col justify-center max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-16 md:min-h-screen"
       >
         <div className="foot-box bg-navy text-bone border-[3px] border-ink rounded-[14px] p-8 md:p-12 shadow-v5-lg flex flex-col justify-between gap-12 opacity-0 will-change-gpu">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 border-b border-bone/10 pb-8">
             <div className="max-w-2xl flex flex-col gap-4">
               <span className="foot-badge text-volt font-mono text-xs font-semibold tracking-wider opacity-0">
-                waitlist · founder pricing
+                waitlist · early access pricing
               </span>
               <h2 className="foot-title text-3xl md:text-5xl lg:text-7xl font-display font-black tracking-tighter leading-[0.9] text-bone flex flex-wrap items-center gap-3 opacity-0">
                 <span>stop guessing.</span>
@@ -1516,12 +1846,12 @@ function Index() {
                 </span>
               </h2>
               <p className="foot-desc text-base md:text-lg font-sans font-medium text-muted-fg-dark leading-relaxed max-w-md opacity-0">
-                one email on launch day. your founder discount is locked the moment you submit. no spam, no upsells, no surprise charges.
+                one email on launch day. your price is locked the moment you submit. no spam, no upsells, no surprise charges.
               </p>
             </div>
             <div className="bg-volt text-ink border-[3px] border-ink rounded-[10px] p-5 shadow-v5-lg-dark max-w-xs select-none">
               <span className="font-mono text-xs font-semibold block mb-1">
-                FOUNDER PRICING. LOCKED AT SIGNUP.
+                EARLY ACCESS PRICING. LOCKED AT SIGNUP.
               </span>
               <span className="text-2xl font-display font-black leading-none block">
                 20% off. forever.

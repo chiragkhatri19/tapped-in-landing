@@ -62,10 +62,10 @@
 }
 
 @theme {
-  --color-bone: #f2ecde;
+  --color-bone: #e7dabb;
   --color-navy: #0d0f1c;
   --color-ink: #111111;
-  --color-card-light: #fbf7ec;
+  --color-card-light: #f3ebd3;
   --color-card-dark: #131626;
   --color-muted-light: #e7e0ce;
   --color-muted-dark: #1a1d2e;
@@ -78,6 +78,9 @@
   --color-alert-light: #ff3b2f;
   --color-alert-dark: #ff5247;
   --color-iris: #6c4df0;
+  --color-teal: #00c2a8;
+  --color-orange: #ff7a1a;
+  --color-violet: #7c3aed;
 
   --font-display: "Bricolage Grotesque", "Inter", system-ui, sans-serif;
   --font-sans: "Hanken Grotesk", "Inter", system-ui, sans-serif;
@@ -225,7 +228,12 @@
     margin: 0;
     padding: 0;
     max-width: 100%;
-    overflow-x: hidden;
+    /* NB: do NOT add overflow-x: hidden here. Setting overflow-x:hidden on BOTH
+       html and body turns the body into a broken scroll container on touch
+       devices and freezes vertical scrolling on mobile (wheel/programmatic
+       scroll still works, which masks it in desktop testing). Horizontal
+       overflow from the rotated marquee is clipped by `overflow-x-clip` on
+       <main> instead. */
   }
 
   body {
@@ -239,9 +247,10 @@
 
 /* Mobile GPU Acceleration & Viewport Optimization */
 /* NOTE: do NOT add transform: translate3d here — GSAP owns transform on these elements */
+/* backface-visibility intentionally removed — it forces GPU compositing which
+   blurs sub-pixel text on mobile Safari/Chrome */
 .will-change-gpu {
-  will-change: transform, opacity;
-  backface-visibility: hidden;
+  will-change: opacity;
 }
 
 /* Fix mobile viewport height jumping when address bar hides/shows */
@@ -290,5 +299,29 @@ summary,
 }
 .sol-card-inner > div {
   -webkit-backface-visibility: hidden;
+}
+
+/* AI scanner beam sweep animation */
+@keyframes scan-beam {
+  0%   { top: 4%; }
+  100% { top: 88%; }
+}
+
+.scan-beam-animate {
+  animation: scan-beam 2s ease-in-out infinite alternate;
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+/* Coach voice input — live waveform pulse */
+@keyframes voice-wave {
+  0%, 100% { transform: scaleY(0.35); }
+  50% { transform: scaleY(1); }
+}
+.voice-bar {
+  transform-origin: bottom;
+  animation: voice-wave 0.9s ease-in-out infinite;
 }
 
